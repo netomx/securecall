@@ -167,6 +167,8 @@ struct Push::Impl : std::enable_shared_from_this<Impl> {
             on_invalid(token);
         } else if (res.result() != http::status::ok) {
             spdlog::warn("push: FCM answered HTTP {}", res.result_int());
+        } else {
+            spdlog::info("push: delivered to FCM");
         }
     }
 };

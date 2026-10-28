@@ -598,6 +598,8 @@ void App::end_call(const std::string& call_id, const char* reason, int64_t skip)
     if (it == calls_.end()) return;
     auto call = it->second;
     calls_.erase(it);
+    spdlog::info("call ended: {} ({}, by {})", reason, call->active ? "answered" : "ringing",
+                 skip == call->caller ? "caller" : skip == call->callee ? "callee" : "server");
     if (call->ring_timer) call->ring_timer->cancel();
     for (auto uid : {call->caller, call->callee}) {
         if (auto u = user_call_.find(uid); u != user_call_.end() && u->second == call_id) user_call_.erase(u);
@@ -622,6 +624,7 @@ void App::deliver_ringing(int64_t user_id) {
     auto c = calls_.find(it->second);
     if (c == calls_.end() || c->second->callee != user_id || c->second->active) return;
     const auto& call = *c->second;
+    spdlog::info("call re-delivered to the callee after reconnecting");
     notify(user_id, event("call_incoming", {{"call_id", call.id}, {"user_id", call.caller_uuid}, {"msg", call.offer}}));
 }
 
@@ -658,6 +661,7 @@ void App::op_call(Request r) {
 
     notify(other.id, event("call_incoming", {{"call_id", call_id}, {"user_id", me.uuid}, {"msg", msg}}));
     if (push_token) push_.wake_for_call(*push_token);
+    spdlog::info("call started (callee {}, push {})", connected ? "connected" : "offline", push_token ? "yes" : "no");
     reply(r);
 }
 

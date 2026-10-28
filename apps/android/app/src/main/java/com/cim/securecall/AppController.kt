@@ -1,6 +1,8 @@
 package com.cim.securecall
 
 import android.app.Application
+import android.net.ConnectivityManager
+import android.net.Network
 import android.os.PowerManager
 import android.os.SystemClock
 import androidx.annotation.StringRes
@@ -39,6 +41,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
@@ -116,7 +119,10 @@ class AppController(private val app: Application) {
     val ui: StateFlow<UiState> = _ui
 
     private var sessionJob: Job? = null
-    private var authenticated = false  // the current socket is bound to our account
+    private val authState = MutableStateFlow(false)
+    private var authenticated: Boolean  // the current socket is bound to our account
+        get() = authState.value
+        set(value) { authState.value = value }
 
     // Call
     private val engine = CallEngine(app, scope)
@@ -129,14 +135,17 @@ class AppController(private val app: Application) {
     private var transport: Transport? = null
     private var iceReady = false                    // our candidates can be sent (handshake done, answer out)
     private val iceOut = ArrayList<String>()        // our candidates waiting for iceReady
+    private var ringSeenAt = 0L                     // last time the server (re)delivered the ringing call
+    private var ringTimeout: Job? = null
 
     init {
         scope.launch {
             server.state.collect { s ->
                 if (s == ConnState.Disconnected) {
                     authenticated = false
-                    // A ringing call survives on the server and is delivered again once we reconnect.
-                    _call.value?.let { if (it.phase == CallPhase.Incoming) finishCall(null) else if (it.phase != CallPhase.Ended) finishCall("disconnected") }
+                    // A ringing call survives on the server and is delivered again once we reconnect,
+                    // so it keeps ringing here; afterAuth() notices if it ended meanwhile.
+                    _call.value?.let { if (it.phase != CallPhase.Incoming && it.phase != CallPhase.Ended) finishCall("disconnected") }
                 }
                 _ui.update { it.copy(conn = s) }
             }
@@ -147,6 +156,15 @@ class AppController(private val app: Application) {
                 _call.update { it?.copy(route = r, bluetoothAvailable = bt) }
             }
         }
+
+        // A network coming back is the best moment to reconnect: don't wait out the backoff.
+        app.getSystemService(ConnectivityManager::class.java).registerDefaultNetworkCallback(
+            object : ConnectivityManager.NetworkCallback() {
+                override fun onAvailable(network: Network) {
+                    scope.launch { reconnectNow() }
+                }
+            }
+        )
 
         if (store.token != null) {
             _ui.update { it.copy(phase = Phase.LoggedIn, myId = store.userId, username = store.username) }
@@ -162,17 +180,21 @@ class AppController(private val app: Application) {
     private fun keepSession() {
         sessionJob?.cancel()
         sessionJob = scope.launch {
-            var backoff = 1_000L
+            var backoff = 500L
             while (isActive) {
                 val token = store.token ?: return@launch
                 try {
                     server.connect().await()
+                    val authAt = SystemClock.elapsedRealtime()
                     if (!authenticated) {
                         server.call("auth") { put("token", token) }
                         authenticated = true
                     }
                     afterAuth()
-                    backoff = 1_000L
+                    // The server re-sends a call that is still ringing right after auth: no re-send means it ended
+                    // while we were offline (most likely the caller gave up).
+                    _call.value?.let { if (it.phase == CallPhase.Incoming && ringSeenAt < authAt) finishCall("hangup") }
+                    backoff = 500L
                     server.state.first { it == ConnState.Disconnected }
                 } catch (e: CancellationException) {
                     throw e
@@ -185,9 +207,21 @@ class AppController(private val app: Application) {
                     // network error: retry below
                 }
                 delay(backoff)
-                backoff = (backoff * 2).coerceAtMost(30_000L)
+                backoff = (backoff * 2).coerceAtMost(10_000L)
             }
         }
+    }
+
+    /** Reconnects at once if we are offline (the app came to the front, the network came back...). */
+    private fun reconnectNow() {
+        if (store.token != null && server.state.value == ConnState.Disconnected) keepSession()
+    }
+
+    /** Waits a few seconds for the connection to be logged in, kicking a reconnect if needed. */
+    private suspend fun awaitAuthenticated(): Boolean {
+        if (authenticated) return true
+        reconnectNow()
+        return withTimeoutOrNull(10_000) { authState.first { it } } != null
     }
 
     private suspend fun afterAuth() {
@@ -220,7 +254,7 @@ class AppController(private val app: Application) {
         scope.launch {
             when (server.state.value) {
                 ConnState.Connecting -> Unit  // just woken up: already on its way
-                ConnState.Disconnected -> keepSession()  // skip the reconnect backoff
+                ConnState.Disconnected -> reconnectNow()  // skip the reconnect backoff
                 ConnState.Connected -> {
                     // The socket may have died silently while the phone slept.
                     val alive = runCatching { withTimeout(4_000) { server.call("ping") } }.isSuccess
@@ -572,6 +606,9 @@ class AppController(private val app: Application) {
         tones.ringback()
         scope.launch {
             try {
+                // Calling right after opening the app: give the connection a moment instead of failing.
+                if (!awaitAuthenticated()) return@launch finishCall("network")
+                if (_call.value?.let { it.callId == callId && it.phase == CallPhase.Calling } != true) return@launch  // hung up while waiting
                 engine.open(iceServers(), engineListener)
                 val offer = engine.createOffer()
                 val hs = CallCrypto.handshake(true, e2e.seed, e2e.peerIk, e2e.psk, callId)
@@ -598,6 +635,10 @@ class AppController(private val app: Application) {
     private fun onIncomingCall(ev: JsonObject) {
         val callId = ev.str("call_id") ?: return
         val from = ev.str("user_id") ?: return
+        if (_call.value?.let { it.callId == callId && it.phase == CallPhase.Incoming } == true) {
+            ringSeenAt = SystemClock.elapsedRealtime()  // the same call again, after we reconnected
+            return
+        }
         if (_call.value != null) {
             // Already in a call (the server normally answers "busy" before we get here).
             scope.launch { runCatching { server.call("call_reject") { put("call_id", callId) } } }
@@ -617,6 +658,18 @@ class AppController(private val app: Application) {
         pendingOffer = offer.str("sdp") ?: return reject("e2e_failed")
         handshake = hs
         _call.value = CallUi(callId, from, outgoing = false, phase = CallPhase.Incoming, verified = e2e.psk != null)
+        ringSeenAt = SystemClock.elapsedRealtime()
+        // Keep the CPU awake while ringing so the "call ended" event is not missed in a sleeping phone,
+        // and give up on our own if it never arrives (the server rings for 45 s).
+        pushWakeLock.acquire(RING_LIMIT_MS)
+        ringTimeout?.cancel()
+        ringTimeout = scope.launch {
+            delay(RING_LIMIT_MS)
+            if (_call.value?.callId == callId && _call.value?.phase == CallPhase.Incoming) {
+                runCatching { server.call("call_reject") { put("call_id", callId) } }
+                finishCall("timeout")
+            }
+        }
         tones.ring()
         CallService.ring(app, displayName(from))
     }
@@ -625,6 +678,7 @@ class AppController(private val app: Application) {
     var appVisible = false
         set(value) {
             field = value
+            if (value) reconnectNow()
             val c = _call.value
             if (c?.phase == CallPhase.Incoming) CallNotifications.showIncoming(app, displayName(c.peerId), headsUp = !value)
         }
@@ -634,6 +688,7 @@ class AppController(private val app: Application) {
         val c = _call.value?.takeIf { it.phase == CallPhase.Incoming } ?: return
         val offer = pendingOffer ?: return
         pendingOffer = null
+        ringTimeout?.cancel()
         tones.stop()
         CallNotifications.cancelIncoming(app)
         _call.value = c.copy(phase = CallPhase.Connecting)
@@ -738,6 +793,8 @@ class AppController(private val app: Application) {
         transport = null
         iceReady = false
         iceOut.clear()
+        ringTimeout?.cancel()
+        if (pushWakeLock.isHeld) pushWakeLock.release()
         tones.stop()
         engine.close()
         audio.stop()
@@ -757,6 +814,8 @@ class AppController(private val app: Application) {
         }
     }
 }
+
+private const val RING_LIMIT_MS = 60_000L
 
 private fun JsonObject.str(key: String): String? = this[key]?.let { runCatching { it.jsonPrimitive.contentOrNull }.getOrNull() }
 
