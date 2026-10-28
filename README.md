@@ -1,4 +1,4 @@
-# securecall
+# Kalloq
 
 Llamadas de voz 1 a 1 cifradas de extremo a extremo, entre teléfonos.
 *End-to-end encrypted 1:1 voice calls between phones.*
