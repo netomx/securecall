@@ -28,54 +28,57 @@
     <string name="continue_action">Continuar</string>
 
     <!-- Contacts -->
-    <string name="add_friend">Agregar amigo</string>
+    <string name="add_friend">Agregar contacto</string>
     <string name="settings">Ajustes</string>
     <string name="status_connected">Conectado</string>
     <string name="status_connecting">Conectando…</string>
     <string name="status_offline">Sin conexión</string>
-    <string name="section_requests">Solicitudes de amistad</string>
-    <string name="section_friends">Amigos</string>
+    <string name="section_requests">Solicitudes de contacto</string>
+    <string name="section_friends">Contactos</string>
     <string name="section_pending">Solicitudes enviadas</string>
     <string name="accept">Aceptar</string>
     <string name="reject">Rechazar</string>
     <string name="cancel">Cancelar</string>
-    <string name="empty_contacts">Aún no tienes amigos. Comparte tu código QR o escanea el de un amigo.</string>
+    <string name="empty_contacts">Aún no tienes contactos. Comparte tu código QR o escanea el de otra persona.</string>
     <string name="key_changed_short">⚠ La llave cambió</string>
     <string name="no_key">Sin llave todavía</string>
 
-    <!-- Add friend -->
+    <!-- Add contact -->
     <string name="my_code">Tu código</string>
-    <string name="my_code_hint">Deja que tu amigo escanee este código o comparte tu enlace.</string>
+    <string name="my_code_hint">Deja que tu contacto escanee este código o comparte tu enlace.</string>
     <string name="share">Compartir</string>
     <string name="share_text">Agrégame en Kalloq: %1$s</string>
     <string name="scan_qr">Escanear código QR</string>
-    <string name="scan_prompt">Apunta al código QR de Kalloq de tu amigo</string>
-    <string name="friend_id_or_link">ID o enlace de tu amigo</string>
+    <string name="scan_prompt">Apunta al código QR de Kalloq de tu contacto</string>
+    <string name="friend_id_or_link">ID o enlace de tu contacto</string>
     <string name="send_request">Enviar solicitud</string>
     <string name="invite_title">¿Agregar contacto?</string>
-    <string name="invite_body">¿Enviar solicitud de amistad a %1$s?</string>
+    <string name="invite_body">¿Enviar solicitud de contacto a %1$s?</string>
 
     <!-- Contact detail -->
-    <string name="alias">Nombre (solo en este teléfono)</string>
+    <string name="alias">Nombre del contacto</string>
+    <string name="alias_hint">Solo se guarda en este teléfono</string>
+    <string name="alias_none">Sin nombre · toca para ponerle uno</string>
+    <string name="rename">Cambiar nombre</string>
     <string name="save">Guardar</string>
     <string name="user_id">ID</string>
     <string name="fingerprint">Huella de la llave</string>
-    <string name="fingerprint_hint">Compárala en persona con tu amigo o, mejor, verifiquen sus QR abajo.</string>
+    <string name="fingerprint_hint">Compárala en persona con tu contacto o, mejor, verifiquen sus QR abajo.</string>
     <string name="key_changed_title">La llave de este contacto cambió</string>
-    <string name="key_changed_body">Puede ser un teléfono nuevo o alguien intentando interceptarte. Confírmalo con tu amigo antes de confiar en ella.</string>
+    <string name="key_changed_body">Puede ser un teléfono nuevo o alguien intentando interceptarte. Confírmalo con tu contacto antes de confiar en ella.</string>
     <string name="trust_key">Confiar en la nueva llave</string>
     <string name="call">Llamar</string>
-    <string name="remove_friend">Eliminar amigo</string>
+    <string name="remove_friend">Eliminar contacto</string>
     <string name="block">Bloquear</string>
     <string name="unblock">Desbloquear</string>
-    <string name="confirm_remove">¿Eliminar a este amigo?</string>
+    <string name="confirm_remove">¿Eliminar este contacto?</string>
     <string name="confirm_block">¿Bloquear a este usuario? Ya no podrá enviarte solicitudes.</string>
 
     <!-- Settings -->
     <string name="account">Cuenta</string>
     <string name="my_id">Mi ID</string>
     <string name="regen_id">Nuevo ID</string>
-    <string name="regen_id_body">Tus amigos te conservan, pero quien tenga tu ID o código QR anterior ya no podrá encontrarte.</string>
+    <string name="regen_id_body">Tus contactos te conservan, pero quien tenga tu ID o código QR anterior ya no podrá encontrarte.</string>
     <string name="language">Idioma</string>
     <string name="lang_system">Predeterminado del sistema</string>
     <string name="security">Seguridad</string>
@@ -86,7 +89,7 @@
     <string name="none">Ninguno</string>
     <string name="logout">Cerrar sesión</string>
     <string name="delete_account">Eliminar cuenta</string>
-    <string name="delete_account_body">Tu cuenta y tu lista de amigos se borran del servidor. No se puede deshacer.</string>
+    <string name="delete_account_body">Tu cuenta y tu lista de contactos se borran del servidor. No se puede deshacer.</string>
     <string name="enter_password">Escribe tu contraseña para confirmar</string>
     <string name="confirm">Confirmar</string>
     <string name="about">Acerca de</string>
@@ -96,11 +99,11 @@
     <!-- Notices -->
     <string name="notice_revoked">Tu cuenta se abrió en otro dispositivo</string>
     <string name="notice_session_expired">La sesión expiró, inicia sesión de nuevo</string>
-    <string name="notice_friend_request">Nueva solicitud de amistad</string>
-    <string name="notice_friend_accepted">Aceptaron tu solicitud de amistad</string>
-    <string name="notice_key_changed">La llave de un amigo cambió</string>
+    <string name="notice_friend_request">Nueva solicitud de contacto</string>
+    <string name="notice_friend_accepted">Aceptaron tu solicitud de contacto</string>
+    <string name="notice_key_changed">La llave de un contacto cambió</string>
     <string name="notice_request_sent">Solicitud enviada</string>
-    <string name="notice_now_friends">Ahora son amigos</string>
+    <string name="notice_now_friends">Ahora son contactos</string>
     <string name="notice_password_changed">Contraseña cambiada</string>
 
     <!-- Errors -->
@@ -151,7 +154,7 @@
     <string name="verify_step1">1. Que %1$s escanee este código con su Kalloq (Contactos → %2$s → Verificar con QR).</string>
     <string name="verify_step2">2. Escanea el código en el teléfono de %1$s.</string>
     <string name="verify_scan">Escanear su código</string>
-    <string name="verify_scan_prompt">Apunta al QR de verificación en el teléfono de tu amigo</string>
+    <string name="verify_scan_prompt">Apunta al QR de verificación en el teléfono de tu contacto</string>
     <string name="verify_code_label">Los dos teléfonos deben mostrar este código:</string>
     <string name="verify_code_hint">Si es distinto, alguno escaneó un código viejo: toquen Empezar de nuevo en ambos teléfonos.</string>
     <string name="verify_reset">Empezar de nuevo</string>
@@ -164,4 +167,14 @@
     <string name="err_key_changed">La llave de este contacto cambió o falta. Revisa su ficha antes de llamar.</string>
     <string name="err_e2e_failed">Se rechazó una llamada que no se pudo verificar</string>
     <string name="err_verify_mismatch">Falló una llamada porque su verificación por QR con ese contacto no coincide. Verifiquen de nuevo.</string>
+    <string name="notif_channel_incoming_quiet">Llamada entrante (app abierta)</string>
+    <string name="notif_channel_missed">Llamadas perdidas</string>
+    <string name="notif_missed_title">Llamada perdida</string>
+    <string name="section_calls">Recibir llamadas</string>
+    <string name="push_ready">Con la app cerrada: activo</string>
+    <string name="push_ready_hint">El servidor despierta tu teléfono cuando alguien te llama.</string>
+    <string name="push_off">Con la app cerrada: no disponible</string>
+    <string name="push_off_hint">Solo recibes llamadas mientras Kalloq está abierto o se usó hace poco.</string>
+    <string name="fullscreen_off">Permitir la pantalla de llamada entrante</string>
+    <string name="fullscreen_off_hint">Sin este permiso, con el teléfono bloqueado solo verás una notificación.</string>
 </resources>

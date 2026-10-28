@@ -29,54 +29,57 @@
     <string name="continue_action">Continue</string>
 
     <!-- Contacts -->
-    <string name="add_friend">Add friend</string>
+    <string name="add_friend">Add contact</string>
     <string name="settings">Settings</string>
     <string name="status_connected">Connected</string>
     <string name="status_connecting">Connecting…</string>
     <string name="status_offline">Offline</string>
-    <string name="section_requests">Friend requests</string>
-    <string name="section_friends">Friends</string>
+    <string name="section_requests">Contact requests</string>
+    <string name="section_friends">Contacts</string>
     <string name="section_pending">Sent requests</string>
     <string name="accept">Accept</string>
     <string name="reject">Reject</string>
     <string name="cancel">Cancel</string>
-    <string name="empty_contacts">You have no friends yet. Share your QR code or scan a friend\'s.</string>
+    <string name="empty_contacts">You have no contacts yet. Share your QR code or scan someone else\'s.</string>
     <string name="key_changed_short">⚠ Key changed</string>
     <string name="no_key">No key yet</string>
 
-    <!-- Add friend -->
+    <!-- Add contact -->
     <string name="my_code">Your code</string>
-    <string name="my_code_hint">Let your friend scan this code, or share your link.</string>
+    <string name="my_code_hint">Let your contact scan this code, or share your link.</string>
     <string name="share">Share</string>
     <string name="share_text">Add me on Kalloq: %1$s</string>
     <string name="scan_qr">Scan a QR code</string>
-    <string name="scan_prompt">Point at your friend\'s Kalloq QR code</string>
-    <string name="friend_id_or_link">Friend ID or link</string>
+    <string name="scan_prompt">Point at your contact\'s Kalloq QR code</string>
+    <string name="friend_id_or_link">Contact ID or link</string>
     <string name="send_request">Send request</string>
     <string name="invite_title">Add contact?</string>
-    <string name="invite_body">Send a friend request to %1$s?</string>
+    <string name="invite_body">Send a contact request to %1$s?</string>
 
     <!-- Contact detail -->
-    <string name="alias">Name (only on this phone)</string>
+    <string name="alias">Contact name</string>
+    <string name="alias_hint">Only stored on this phone</string>
+    <string name="alias_none">No name · tap to add one</string>
+    <string name="rename">Rename</string>
     <string name="save">Save</string>
     <string name="user_id">ID</string>
     <string name="fingerprint">Key fingerprint</string>
-    <string name="fingerprint_hint">Compare it with your friend in person, or better, verify each other\'s QR below.</string>
+    <string name="fingerprint_hint">Compare it with your contact in person, or better, verify each other\'s QR below.</string>
     <string name="key_changed_title">This contact\'s key changed</string>
-    <string name="key_changed_body">It may be a new phone, or someone trying to intercept you. Confirm with your friend before trusting it.</string>
+    <string name="key_changed_body">It may be a new phone, or someone trying to intercept you. Confirm with your contact before trusting it.</string>
     <string name="trust_key">Trust new key</string>
     <string name="call">Call</string>
-    <string name="remove_friend">Remove friend</string>
+    <string name="remove_friend">Remove contact</string>
     <string name="block">Block</string>
     <string name="unblock">Unblock</string>
-    <string name="confirm_remove">Remove this friend?</string>
+    <string name="confirm_remove">Remove this contact?</string>
     <string name="confirm_block">Block this user? They will no longer be able to send you requests.</string>
 
     <!-- Settings -->
     <string name="account">Account</string>
     <string name="my_id">My ID</string>
     <string name="regen_id">New ID</string>
-    <string name="regen_id_body">Your friends keep you, but anyone with your old ID or QR code will no longer be able to find you.</string>
+    <string name="regen_id_body">Your contacts keep you, but anyone with your old ID or QR code will no longer be able to find you.</string>
     <string name="language">Language</string>
     <string name="lang_system">System default</string>
     <string name="lang_es" translatable="false">Español</string>
@@ -89,7 +92,7 @@
     <string name="none">None</string>
     <string name="logout">Log out</string>
     <string name="delete_account">Delete account</string>
-    <string name="delete_account_body">Your account and friend list are deleted from the server. This cannot be undone.</string>
+    <string name="delete_account_body">Your account and contact list are deleted from the server. This cannot be undone.</string>
     <string name="enter_password">Enter your password to confirm</string>
     <string name="confirm">Confirm</string>
     <string name="about">About</string>
@@ -99,11 +102,11 @@
     <!-- Notices -->
     <string name="notice_revoked">Your account was opened on another device</string>
     <string name="notice_session_expired">Session expired, log in again</string>
-    <string name="notice_friend_request">New friend request</string>
-    <string name="notice_friend_accepted">Friend request accepted</string>
-    <string name="notice_key_changed">A friend\'s key changed</string>
+    <string name="notice_friend_request">New contact request</string>
+    <string name="notice_friend_accepted">Contact request accepted</string>
+    <string name="notice_key_changed">A contact\'s key changed</string>
     <string name="notice_request_sent">Request sent</string>
-    <string name="notice_now_friends">You are now friends</string>
+    <string name="notice_now_friends">You are now contacts</string>
     <string name="notice_password_changed">Password changed</string>
 
     <!-- Errors -->
@@ -155,7 +158,7 @@
     <string name="verify_step1">1. Let %1$s scan this code with their Kalloq (Contacts → %2$s → Verify with QR).</string>
     <string name="verify_step2">2. Scan the code on %1$s\'s phone.</string>
     <string name="verify_scan">Scan their code</string>
-    <string name="verify_scan_prompt">Point at the verification QR on your friend\'s phone</string>
+    <string name="verify_scan_prompt">Point at the verification QR on your contact\'s phone</string>
     <string name="verify_code_label">Both phones must show this code:</string>
     <string name="verify_code_hint">If it is different, one of you scanned an old code: tap Start again on both phones.</string>
     <string name="verify_reset">Start again</string>
@@ -168,4 +171,14 @@
     <string name="err_key_changed">This contact\'s key changed or is missing. Check their card before calling.</string>
     <string name="err_e2e_failed">Rejected a call that could not be verified</string>
     <string name="err_verify_mismatch">A call failed because your QR verification with that contact does not match. Verify again.</string>
+    <string name="notif_channel_incoming_quiet">Incoming call (app open)</string>
+    <string name="notif_channel_missed">Missed calls</string>
+    <string name="notif_missed_title">Missed call</string>
+    <string name="section_calls">Receiving calls</string>
+    <string name="push_ready">With the app closed: on</string>
+    <string name="push_ready_hint">The server wakes your phone when someone calls you.</string>
+    <string name="push_off">With the app closed: unavailable</string>
+    <string name="push_off_hint">You only get calls while Kalloq is open or was used recently.</string>
+    <string name="fullscreen_off">Allow the incoming call screen</string>
+    <string name="fullscreen_off_hint">Without this permission, a locked phone only shows a notification.</string>
 </resources>

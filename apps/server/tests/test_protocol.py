@@ -363,7 +363,7 @@ async def test_calls():
     await a.ok("call_end", call_id=cid)
     assert (await b.event("call_ended"))["reason"] == "hangup"
 
-    # Offline callee
+    # Offline callee without push
     d = await registered()
     await make_friends(a, d)
     await d.close()
@@ -371,6 +371,59 @@ async def test_calls():
     await a.err("call", "offline", user_id=d.uid, call_id=new_call_id(), msg="offer")
     for x in (a, b):
         await x.close()
+
+
+async def test_push_wake():
+    """Needs the server started with a (test) fcm_credentials_file, so push counts as enabled."""
+    a, b = await registered(), await registered()
+    await make_friends(a, b)
+    await b.err("set_push", "bad_request", token="x" * 5000)
+    await b.ok("set_push", token="fcm-token-" + secrets.token_hex(8))
+
+    # b's phone is asleep: the call still rings (push sent) and reaches b once it reconnects
+    await b.close()
+    await asyncio.sleep(0.3)
+    cid = new_call_id()
+    await a.ok("call", user_id=b.uid, call_id=cid, msg="offer")
+    b2 = await Client().connect()
+    await b2.ok("auth", token=b.token)
+    ev = await b2.event("call_incoming")
+    assert ev == {"ev": "call_incoming", "call_id": cid, "user_id": a.uid, "msg": "offer"}
+
+    # The callee's socket dropping while it rings does not end the call; the next login gets it again
+    await b2.close()
+    await a.no_event()
+    b3 = await Client().connect()
+    await b3.ok("auth", token=b.token)
+    assert (await b3.event("call_incoming"))["call_id"] == cid
+    await b3.ok("call_answer", call_id=cid, msg="answer")
+    await a.event("call_answered")
+    # Once answered, losing the socket ends it
+    await b3.close()
+    assert (await a.event("call_ended"))["reason"] == "disconnected"
+
+    # Logging out clears the push token: offline again
+    b4 = await Client().connect()
+    await b4.ok("auth", token=b.token)
+    await b4.ok("logout")
+    await asyncio.sleep(0.3)
+    await a.err("call", "offline", user_id=b.uid, call_id=new_call_id(), msg="offer")
+
+    # The same phone token moves to whoever logs in on it
+    c, d = await registered(), await registered()
+    await make_friends(a, c)
+    await make_friends(a, d)
+    tok = "shared-" + secrets.token_hex(8)
+    await c.ok("set_push", token=tok)
+    await d.ok("set_push", token=tok)
+    await c.close()
+    await d.close()
+    await asyncio.sleep(0.3)
+    await a.err("call", "offline", user_id=c.uid, call_id=new_call_id(), msg="offer")
+    cid = new_call_id()
+    await a.ok("call", user_id=d.uid, call_id=cid, msg="offer")
+    await a.ok("call_end", call_id=cid)
+    await a.close()
 
 
 async def test_flood_closes_connection():

@@ -9,7 +9,7 @@ namespace kq {
 
 namespace {
 
-constexpr int kSchemaVersion = 1;
+constexpr int kSchemaVersion = 2;
 
 constexpr const char* kSchemaV1 = R"sql(
 CREATE TABLE users (
@@ -46,6 +46,9 @@ CREATE TABLE blocks (
 );
 )sql";
 
+// v2: FCM token of the device holding the session (wakes the app for incoming calls).
+constexpr const char* kSchemaV2 = "ALTER TABLE sessions ADD COLUMN push_token TEXT;";
+
 constexpr std::string_view kUserCols = "id, uuid, username, pw_hash, rc_hash, ik, key_version";
 
 int64_t now() { return static_cast<int64_t>(std::time(nullptr)); }
@@ -77,6 +80,13 @@ void Store::migrate() {
         Tx tx(db_);
         db_.exec(kSchemaV1);
         db_.exec("PRAGMA user_version = 1");
+        tx.commit();
+        version = 1;
+    }
+    if (version == 1) {
+        Tx tx(db_);
+        db_.exec(kSchemaV2);
+        db_.exec("PRAGMA user_version = 2");
         tx.commit();
     }
 }
@@ -152,6 +162,28 @@ std::optional<int64_t> Store::session_user(std::string_view token) {
     st.bind(1, Blob{crypto::token_hash(token)});
     if (!st.step()) return std::nullopt;
     return st.col_int(0);
+}
+
+void Store::set_push_token(int64_t user_id, std::string_view token) {
+    Tx tx(db_);
+    if (!token.empty()) {
+        // A device belongs to one account: drop the token from a previous account on the same phone.
+        db_.prepare("UPDATE sessions SET push_token = NULL WHERE push_token = ?1").bind(1, token).run();
+    }
+    auto st = db_.prepare("UPDATE sessions SET push_token = NULLIF(?2, '') WHERE user_id = ?1");
+    st.bind(1, user_id).bind(2, token).run();
+    tx.commit();
+}
+
+std::optional<std::string> Store::push_token(int64_t user_id) {
+    auto st = db_.prepare("SELECT push_token FROM sessions WHERE user_id = ?1 AND push_token IS NOT NULL");
+    st.bind(1, user_id);
+    if (!st.step()) return std::nullopt;
+    return st.col_text(0);
+}
+
+void Store::clear_push_token(std::string_view token) {
+    db_.prepare("UPDATE sessions SET push_token = NULL WHERE push_token = ?1").bind(1, token).run();
 }
 
 void Store::delete_sessions(int64_t user_id) {

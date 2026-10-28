@@ -16,7 +16,7 @@ Llamadas de voz 1 a 1 cifradas de extremo a extremo, entre teléfonos.
 | `deploy/` | Configuración de nginx, coturn y systemd |
 | `docs/` | [Arquitectura](docs/ARQUITECTURA.md) |
 
-Estado: fases 0–4 listas: servidor en producción (`wss://call.l8.nz/ws`) y app Android con cuentas, código de recuperación, amigos por QR/enlace, llaves Ed25519 fijadas (TOFU), ES/EN, llamadas de voz WebRTC (silenciar, altavoz, Bluetooth) con cifrado de extremo a extremo (Noise KKpsk2) y verificación en persona por QR. Siguiente: fase 5, push FCM para recibir llamadas con la app cerrada.
+Estado: fases 0–5 listas: servidor en producción (`wss://call.l8.nz/ws`) y app Android con cuentas, código de recuperación, contactos por QR/enlace (con nombre propio en cada teléfono), llaves Ed25519 fijadas (TOFU), ES/EN, llamadas de voz WebRTC (silenciar, altavoz, Bluetooth) con cifrado de extremo a extremo (Noise KKpsk2) verificación en persona por QR, y push FCM para recibir llamadas con la app cerrada. Siguiente: ConnectionService/Telecom y fase 6 (endurecimiento).
 
 ![Kalloq](docs/logo/kalloq.svg)
 

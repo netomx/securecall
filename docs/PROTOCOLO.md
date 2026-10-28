@@ -68,6 +68,7 @@ Al conectar, el servidor envía `{"ev":"hello","v":2,"server":"sc-server/<versi�
 | `block` / `unblock` | `user_id` | `{}` |
 | `contacts` | — | `friends: [{user_id, ik, key_version}]`, `incoming: [user_id]`, `outgoing: [user_id]`, `blocked: [user_id]` |
 | `turn` | — | `urls`, `username`, `credential`, `ttl` (para `RTCIceServer`) |
+| `set_push` | `token` (token FCM, máx. 4096; `""` lo borra) | `{}`. Se guarda con la sesión: `logout` o entrar en otro teléfono lo borra. Un mismo token solo pertenece a una cuenta |
 
 ### Llamadas
 
@@ -80,13 +81,15 @@ candidatos ICE cifrados (ver ARQUITECTURA §4.4). Solo se puede llamar a amigos.
 
 | op | Parámetros | Respuesta / errores |
 |---|---|---|
-| `call` | `user_id`, `call_id` (UUIDv4 elegido por quien llama), `msg` (máx. 14 KiB) | `{}` · `offline`, `busy` (el otro está en otra llamada), `in_call` (tú ya estás en una), `not_found` |
+| `call` | `user_id`, `call_id` (UUIDv4 elegido por quien llama), `msg` (máx. 14 KiB) | `{}` · `offline` (desconectado y sin push), `busy` (el otro está en otra llamada), `in_call` (tú ya estás en una), `not_found` |
 | `call_answer` | `call_id`, `msg` (máx. 14 KiB) | `{}` (solo quien recibe la llamada) |
 | `call_ice` | `call_id`, `msg` (máx. 3 KiB) | `{}` |
 | `call_reject` | `call_id` | `{}` (solo mientras suena) |
 | `call_end` | `call_id` | `{}` (colgar o cancelar) |
 
-Si nadie contesta en 45 s, el servidor termina la llamada (`timeout`). Si uno de los dos se desconecta, el otro recibe `call_ended` con `disconnected`.
+Si nadie contesta en 45 s, el servidor termina la llamada (`timeout`). Si uno de los dos se desconecta, el otro recibe `call_ended` con `disconnected`, salvo quien **recibe** una llamada que todavía suena: su teléfono puede estar reconectando o despertando por push, y al autenticarse (`auth`/`login`) recibe otra vez `call_incoming`.
+
+Si quien recibe tiene token de push, el servidor le manda un push FCM `{"t":"call"}` (sin más datos) al llamar, esté conectado o no.
 
 Si alguien te bloqueó, `friend_request` responde `pending` igualmente: no se revela el bloqueo.
 

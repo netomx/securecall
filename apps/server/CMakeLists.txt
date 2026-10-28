@@ -25,6 +25,7 @@ add_executable(sc-server
   src/store.cpp
   src/app.cpp
   src/session.cpp
+  src/push.cpp
 )
 
 target_compile_options(sc-server PRIVATE -Wall -Wextra -Wpedantic)
@@ -32,6 +33,7 @@ target_compile_definitions(sc-server PRIVATE SC_VERSION="${PROJECT_VERSION}")
 target_link_libraries(sc-server PRIVATE
   Boost::headers
   SQLite::SQLite3
+  OpenSSL::SSL
   OpenSSL::Crypto
   nlohmann_json::nlohmann_json
   spdlog::spdlog

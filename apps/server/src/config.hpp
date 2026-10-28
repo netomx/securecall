@@ -10,6 +10,7 @@ struct Config {
     uint16_t port = 8080;
     std::string db_path = "/var/lib/kalloq/kalloq.db";
     std::string turn_secret_file = "/etc/kalloq/turn_secret";
+    std::string fcm_credentials_file = "/etc/kalloq/fcm.json";  // Firebase service account; push off if missing
     std::string turn_host = "call.l8.nz";
     int turn_ttl = 3600;
     bool trust_proxy = true;   // take the client IP from X-Real-IP (nginx in front)

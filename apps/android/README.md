@@ -18,9 +18,10 @@ Kotlin + Jetpack Compose, minSdk 26, paquete `com.cim.securecall`.
 | `crypto/CallCrypto.kt` | Handshake por llamada, id del PSK, código de seguridad |
 | `crypto/Verification.kt` | QR de verificación en persona y PSK del par |
 | `ui/VerifyScreen.kt` | Verificar en persona: mostrar y escanear QR, código a comparar |
+| `push/Push.kt` | Token FCM y servicio que despierta la app cuando llega una llamada |
 | `call/CallEngine.kt` | WebRTC solo audio (Opus, DTLS-SRTP), ICE por goteo, cola de candidatos remotos |
 | `call/AudioRouter.kt` | Modo comunicación, foco de audio, auricular / altavoz / Bluetooth (cambia solo al conectar o desconectar el audífono), sensor de proximidad |
-| `call/CallService.kt` | Servicio en primer plano tipo micrófono y notificaciones de llamada entrante / en curso |
+| `call/CallService.kt` | Servicio en primer plano (`phoneCall` mientras suena, `+microphone` en llamada), notificación de llamada entrante con Contestar/Rechazar, en curso y perdida |
 | `call/CallTones.kt` | Timbre + vibración al recibir, tono de llamada al marcar |
 | `ui/` | Pantallas Compose: acceso, código de recuperación, contactos, agregar amigo (QR), contacto, ajustes |
 
@@ -28,3 +29,9 @@ Kotlin + Jetpack Compose, minSdk 26, paquete `com.cim.securecall`.
 - La pantalla del código de recuperación usa `FLAG_SECURE` (no se puede capturar).
 - Idioma por app (ES/EN) con `AppCompatDelegate.setApplicationLocales`.
 - Invitaciones: `https://call.l8.nz/a/<uuid>` y `kalloq://add/<uuid>`.
+
+## Push
+
+Para recibir llamadas con la app cerrada, poner el `google-services.json` del proyecto Firebase en
+`app/` antes de compilar (ver `deploy/README.md`). Sin él la app compila y funciona, y Ajustes →
+"Recibir llamadas" dice "no disponible".

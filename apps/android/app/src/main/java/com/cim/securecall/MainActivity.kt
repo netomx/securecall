@@ -1,12 +1,15 @@
 package com.cim.securecall
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.cim.securecall.data.parseFriendId
 import com.cim.securecall.ui.AppRoot
@@ -20,7 +23,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        if (savedInstanceState == null) handleInvite(intent)
+        if (savedInstanceState == null) handleIntent(intent)
         // While a call is ringing or ongoing: show over the lock screen, wake the screen, keep it on.
         lifecycleScope.launch {
             controller.call.collect { call -> showForCall(call != null && call.phase != CallPhase.Ended) }
@@ -44,12 +47,24 @@ class MainActivity : AppCompatActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        handleInvite(intent)
+        handleIntent(intent)
     }
 
-    private fun handleInvite(intent: Intent?) {
+    private fun handleIntent(intent: Intent?) {
+        if (intent?.action == ACTION_ANSWER) {
+            // "Answer" on the incoming-call notification. Without the microphone permission the call
+            // screen's own answer button asks for it.
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+                controller.acceptCall()
+            }
+            return
+        }
         val link = intent?.data?.toString() ?: return
         parseFriendId(link)?.let(controller::openInvite)
+    }
+
+    companion object {
+        const val ACTION_ANSWER = "com.cim.securecall.ANSWER"
     }
 
     @Suppress("DEPRECATION")
@@ -61,7 +76,8 @@ class MainActivity : AppCompatActivity() {
             val flags = WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
             if (on) window.addFlags(flags) else window.clearFlags(flags)
         }
-        if (on) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        else window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        // FLAG_SECURE: the call screen stays black in screenshots and screen recordings.
+        val keep = WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON or WindowManager.LayoutParams.FLAG_SECURE
+        if (on) window.addFlags(keep) else window.clearFlags(keep)
     }
 }

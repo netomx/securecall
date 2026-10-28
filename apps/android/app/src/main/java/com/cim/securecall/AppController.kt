@@ -1,6 +1,7 @@
 package com.cim.securecall
 
 import android.app.Application
+import android.os.PowerManager
 import android.os.SystemClock
 import androidx.annotation.StringRes
 import com.cim.securecall.call.AudioRoute
@@ -23,6 +24,7 @@ import com.cim.securecall.data.parseFriendId
 import com.cim.securecall.net.ConnState
 import com.cim.securecall.net.ServerClient
 import com.cim.securecall.net.ServerError
+import com.cim.securecall.push.Push
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -36,6 +38,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
@@ -86,6 +89,7 @@ data class UiState(
     val busy: Boolean = false,
     val notice: Notice? = null,
     val pendingInvite: String? = null,
+    val pushReady: Boolean = false,  // the server can wake this phone for calls
 )
 
 enum class CallPhase { Calling, Incoming, Connecting, Active, Ended }
@@ -131,7 +135,8 @@ class AppController(private val app: Application) {
             server.state.collect { s ->
                 if (s == ConnState.Disconnected) {
                     authenticated = false
-                    _call.value?.let { if (it.phase != CallPhase.Ended) finishCall("disconnected") }
+                    // A ringing call survives on the server and is delivered again once we reconnect.
+                    _call.value?.let { if (it.phase == CallPhase.Incoming) finishCall(null) else if (it.phase != CallPhase.Ended) finishCall("disconnected") }
                 }
                 _ui.update { it.copy(conn = s) }
             }
@@ -189,6 +194,43 @@ class AppController(private val app: Application) {
         val seed = store.identitySeed ?: Identity.newSeed().also { store.identitySeed = it }
         server.call("set_key") { put("ik", b64url(Identity.publicKey(seed))) }
         refreshContacts()
+        Push.token()?.let { sendPushToken(it) }
+    }
+
+    // ---------------------------------------------------------------- push
+
+    private val pushWakeLock = app.getSystemService(PowerManager::class.java)
+        .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "kalloq:push")
+        .apply { setReferenceCounted(false) }
+
+    private suspend fun sendPushToken(token: String) {
+        runCatching { server.call("set_push") { put("token", token) } }
+            .onSuccess { _ui.update { it.copy(pushReady = true) } }
+    }
+
+    /** FCM rotated this phone's token. */
+    fun onPushToken(token: String) {
+        if (authenticated) scope.launch { sendPushToken(token) }
+    }
+
+    /** A push says someone is calling: make sure our connection is up so the server can deliver the call. */
+    fun onPushWake() {
+        if (store.token == null) return
+        pushWakeLock.acquire(30_000)
+        scope.launch {
+            when (server.state.value) {
+                ConnState.Connecting -> Unit  // just woken up: already on its way
+                ConnState.Disconnected -> keepSession()  // skip the reconnect backoff
+                ConnState.Connected -> {
+                    // The socket may have died silently while the phone slept.
+                    val alive = runCatching { withTimeout(4_000) { server.call("ping") } }.isSuccess
+                    if (!alive) {
+                        server.disconnect()
+                        keepSession()
+                    }
+                }
+            }
+        }
     }
 
     /** The current socket is now logged in; keepSession() uploads our key and loads contacts. */
@@ -576,18 +618,15 @@ class AppController(private val app: Application) {
         handshake = hs
         _call.value = CallUi(callId, from, outgoing = false, phase = CallPhase.Incoming, verified = e2e.psk != null)
         tones.ring()
-        if (!appVisible) CallNotifications.showIncoming(app, displayName(from))
+        CallService.ring(app, displayName(from))
     }
 
-    /** Set by MainActivity. The incoming-call notification is only needed when the call screen is not visible. */
+    /** Set by MainActivity. The incoming-call notification only pops up when the call screen is not visible. */
     var appVisible = false
         set(value) {
             field = value
             val c = _call.value
-            when {
-                value -> CallNotifications.cancelIncoming(app)
-                c?.phase == CallPhase.Incoming -> CallNotifications.showIncoming(app, displayName(c.peerId))
-            }
+            if (c?.phase == CallPhase.Incoming) CallNotifications.showIncoming(app, displayName(c.peerId), headsUp = !value)
         }
 
     /** Requires RECORD_AUDIO (the UI asks for it first). */
@@ -704,6 +743,9 @@ class AppController(private val app: Application) {
         audio.stop()
         CallService.stop(app)
         CallNotifications.cancelIncoming(app)
+        if (!c.outgoing && c.phase == CallPhase.Incoming && reason in setOf("hangup", "timeout", "disconnected")) {
+            CallNotifications.missed(app, displayName(c.peerId))
+        }
         if (reason == null) {
             _call.value = null
             return

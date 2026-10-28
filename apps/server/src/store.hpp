@@ -57,6 +57,10 @@ public:
     std::string create_session(int64_t user_id);
     std::optional<int64_t> session_user(std::string_view token);
     void delete_sessions(int64_t user_id);
+    // FCM token of the user's device, kept with the session (logging out or in elsewhere drops it).
+    void set_push_token(int64_t user_id, std::string_view token);  // empty clears it
+    std::optional<std::string> push_token(int64_t user_id);
+    void clear_push_token(std::string_view token);  // FCM said the token is no longer valid
 
     Relation relation(int64_t me, int64_t other);
     bool is_blocked(int64_t blocker, int64_t blocked);

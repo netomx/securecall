@@ -66,6 +66,22 @@ systemctl daemon-reload && systemctl enable --now sc-server
 El servicio corre como `kalloq` con aislamiento de systemd (`systemd-analyze security sc-server` → 1.7 OK).
 La base de datos SQLite vive en `/var/lib/kalloq/kalloq.db` (modo 600).
 
+## Push (Firebase Cloud Messaging)
+
+Sin esto el servidor funciona igual, pero las llamadas solo llegan a teléfonos con la app viva.
+
+1. En [console.firebase.google.com](https://console.firebase.google.com) crear un proyecto (sin Analytics)
+   y agregarle una app Android con el paquete `com.cim.securecall`.
+2. Descargar `google-services.json` y ponerlo en `apps/android/app/` (está en `.gitignore`); la
+   compilación lo lee sola.
+3. Configuración del proyecto → Cuentas de servicio → "Generar nueva clave privada". Ese JSON es
+   una credencial: copiarlo al servidor y protegerlo:
+
+```bash
+install -m 640 -o root -g kalloq fcm.json /etc/kalloq/fcm.json
+systemctl restart sc-server   # el log dice "push enabled (Firebase project ...)"
+```
+
 ## Credenciales TURN temporales (formato `use-auth-secret`)
 
 ```

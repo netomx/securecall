@@ -2,6 +2,11 @@
 
 package com.cim.securecall.ui
 
+import android.app.NotificationManager
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
+import android.provider.Settings
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -35,7 +40,10 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.DeleteForever
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Key
+import androidx.compose.material.icons.filled.NotificationsActive
+import androidx.compose.material.icons.filled.NotificationsOff
 import androidx.compose.material.icons.filled.Password
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.PersonRemove
@@ -67,6 +75,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -81,10 +90,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.os.LocaleListCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.cim.securecall.AppController
 import com.cim.securecall.Friend
 import com.cim.securecall.R
@@ -341,7 +354,7 @@ fun ContactScreen(
     onRemove: () -> Unit,
     onBlock: () -> Unit,
 ) {
-    var alias by rememberSaveable(friend.id) { mutableStateOf(friend.alias ?: "") }
+    var renaming by rememberSaveable { mutableStateOf(false) }
     var confirmRemove by remember { mutableStateOf(false) }
     var confirmBlock by remember { mutableStateOf(false) }
 
@@ -364,15 +377,11 @@ fun ContactScreen(
                 Spacer(Modifier.height(16.dp))
             }
 
-            OutlinedTextField(
-                value = alias,
-                onValueChange = { alias = it.take(40) },
-                label = { Text(stringResource(R.string.alias)) },
-                singleLine = true,
-                trailingIcon = {
-                    TextButton(onClick = { onAlias(alias) }, enabled = alias != (friend.alias ?: "")) { Text(stringResource(R.string.save)) }
-                },
-                modifier = Modifier.fillMaxWidth(),
+            ListItem(
+                modifier = Modifier.clip(RoundedCornerShape(12.dp)).clickable { renaming = true },
+                headlineContent = { Text(friend.alias ?: stringResource(R.string.alias_none), style = MaterialTheme.typography.titleMedium) },
+                supportingContent = { Text(stringResource(R.string.alias_hint), style = MaterialTheme.typography.bodySmall) },
+                trailingContent = { Icon(Icons.Default.Edit, stringResource(R.string.rename)) },
             )
             Spacer(Modifier.height(16.dp))
 
@@ -433,12 +442,37 @@ fun ContactScreen(
         }
     }
 
+    if (renaming) {
+        RenameDialog(friend.alias ?: "", onSave = { onAlias(it); renaming = false }, onDismiss = { renaming = false })
+    }
     if (confirmRemove) {
         ConfirmDialog(stringResource(R.string.remove_friend), stringResource(R.string.confirm_remove), stringResource(R.string.remove_friend), onRemove) { confirmRemove = false }
     }
     if (confirmBlock) {
         ConfirmDialog(stringResource(R.string.block), stringResource(R.string.confirm_block), stringResource(R.string.block), onBlock) { confirmBlock = false }
     }
+}
+
+/** The contact's label, kept only on this phone. Empty clears it. */
+@Composable
+private fun RenameDialog(current: String, onSave: (String) -> Unit, onDismiss: () -> Unit) {
+    var text by rememberSaveable { mutableStateOf(current) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.rename)) },
+        text = {
+            OutlinedTextField(
+                value = text,
+                onValueChange = { text = it.take(40) },
+                label = { Text(stringResource(R.string.alias)) },
+                supportingText = { Text(stringResource(R.string.alias_hint)) },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
+            )
+        },
+        confirmButton = { TextButton(onClick = { onSave(text) }) { Text(stringResource(R.string.save)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
+    )
 }
 
 // ------------------------------------------------------------------ settings
@@ -458,11 +492,50 @@ private fun SettingRow(icon: ImageVector, text: String, color: Color = Color.Uns
 fun SettingsScreen(vm: AppController, ui: UiState, onBack: () -> Unit) {
     val context = LocalContext.current
     var dialog by remember { mutableStateOf<Dialog?>(null) }
+    // Android 14+ may deny full-screen intents (the incoming call screen on a locked phone); re-checked on return from Settings.
+    var fullScreenAllowed by remember { mutableStateOf(true) }
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    DisposableEffect(lifecycle) {
+        val check = {
+            fullScreenAllowed = Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE ||
+                context.getSystemService(NotificationManager::class.java).canUseFullScreenIntent()
+        }
+        check()
+        val observer = LifecycleEventObserver { _, e -> if (e == Lifecycle.Event.ON_RESUME) check() }
+        lifecycle.addObserver(observer)
+        onDispose { lifecycle.removeObserver(observer) }
+    }
     val currentLang = remember { AppCompatDelegate.getApplicationLocales().toLanguageTags().substringBefore(',').substringBefore('-') }
     val version = remember { runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }.getOrNull() ?: "?" }
 
     Scaffold(topBar = { BackTopBar(stringResource(R.string.settings), onBack) }) { pad ->
         Column(Modifier.fillMaxSize().padding(pad).verticalScroll(rememberScrollState())) {
+            SectionTitle(stringResource(R.string.section_calls))
+            ListItem(
+                leadingContent = {
+                    Icon(
+                        if (ui.pushReady) Icons.Default.NotificationsActive else Icons.Default.NotificationsOff, null,
+                        tint = if (ui.pushReady) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                },
+                headlineContent = { Text(stringResource(if (ui.pushReady) R.string.push_ready else R.string.push_off)) },
+                supportingContent = {
+                    Text(stringResource(if (ui.pushReady) R.string.push_ready_hint else R.string.push_off_hint), style = MaterialTheme.typography.bodySmall)
+                },
+            )
+            if (!fullScreenAllowed) {
+                ListItem(
+                    modifier = Modifier.clickable {
+                        context.startActivity(
+                            Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT, Uri.parse("package:" + context.packageName))
+                        )
+                    },
+                    leadingContent = { Icon(Icons.Default.Warning, null, tint = MaterialTheme.colorScheme.error) },
+                    headlineContent = { Text(stringResource(R.string.fullscreen_off)) },
+                    supportingContent = { Text(stringResource(R.string.fullscreen_off_hint), style = MaterialTheme.typography.bodySmall) },
+                )
+            }
+
             SectionTitle(stringResource(R.string.account))
             ListItem(
                 headlineContent = { Text(ui.username ?: "") },

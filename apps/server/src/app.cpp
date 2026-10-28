@@ -84,6 +84,7 @@ App::App(asio::io_context& ioc, Config cfg)
       cfg_(std::move(cfg)),
       db_(cfg_.db_path),
       store_(db_),
+      push_(ioc, cfg_.fcm_credentials_file, [this](const std::string& token) { store_.clear_push_token(token); }),
       pool_(static_cast<std::size_t>(cfg_.hash_threads)),
       prune_timer_(ioc),
       ip_auth_(20, 1.0 / 30, cfg_.rate_limits),
@@ -111,6 +112,7 @@ App::App(asio::io_context& ioc, Config cfg)
         {"block", {&App::op_block, true}},
         {"unblock", {&App::op_unblock, true}},
         {"contacts", {&App::op_contacts, true}},
+        {"set_push", {&App::op_set_push, true}},
         {"turn", {&App::op_turn, true}},
         {"call", {&App::op_call, true}},
         {"call_answer", {&App::op_call_answer, true}},
@@ -168,7 +170,7 @@ void App::on_open(const std::shared_ptr<Session>& s) {
 
 void App::on_closed(Session& s) {
     --connections_;
-    if (s.user_id) drop_calls(*s.user_id);
+    if (s.user_id) drop_calls(*s.user_id, true);
     unbind(s);
 }
 
@@ -211,12 +213,13 @@ void App::start_session(const Request& r, const User& user, Json extra) {
     extra["key_version"] = user.key_version;
     extra["has_key"] = user.ik.has_value();
     reply(r, std::move(extra));
+    deliver_ringing(user.id);
 }
 
 void App::bind(const std::shared_ptr<Session>& s, int64_t user_id) {
     if (auto it = online_.find(user_id); it != online_.end()) {
         if (auto old = it->second.lock(); old && old != s) {
-            drop_calls(user_id);
+            drop_calls(user_id, true);  // usually the same phone reconnecting
             old->user_id.reset();
             old->send(dump(event("session_revoked")));
             old->close();
@@ -326,6 +329,7 @@ void App::op_auth(Request r) {
     if (!user) throw ApiError("invalid_token");
     bind(r.session, user->id);
     reply(r, {{"user_id", user->uuid}, {"key_version", user->key_version}, {"has_key", user->ik.has_value()}});
+    deliver_ringing(user->id);
 }
 
 void App::op_recover(Request r) {
@@ -368,6 +372,7 @@ void App::op_whoami(Request r) {
 }
 
 void App::op_logout(Request r) {
+    drop_calls(*r.session->user_id, false);
     store_.delete_sessions(*r.session->user_id);
     unbind(*r.session);
     reply(r);
@@ -428,6 +433,7 @@ void App::op_delete_account(Request r) {
             store_.delete_user(me.id);
             for (auto id : friends) notify(id, event("friend_removed", {{"user_id", me.uuid}}));
             spdlog::info("account deleted");
+            drop_calls(me.id, false);
             unbind(*r.session);
             reply(r);
             r.session->close();
@@ -560,6 +566,16 @@ void App::op_turn(Request r) {
 }
 
 // ---------------------------------------------------------------------------
+// Push
+
+void App::op_set_push(Request r) {
+    // FCM registration token; "" when the phone has no Google services or push was turned off.
+    const auto& token = str_param(r.body, "token", 0, 4096);
+    store_.set_push_token(*r.session->user_id, token);
+    reply(r);
+}
+
+// ---------------------------------------------------------------------------
 // Calls
 
 namespace {
@@ -589,11 +605,24 @@ void App::end_call(const std::string& call_id, const char* reason, int64_t skip)
     }
 }
 
-void App::drop_calls(int64_t user_id) {
-    if (auto it = user_call_.find(user_id); it != user_call_.end()) {
-        auto id = it->second;
-        end_call(id, "disconnected", user_id);
+void App::drop_calls(int64_t user_id, bool keep_ringing) {
+    auto it = user_call_.find(user_id);
+    if (it == user_call_.end()) return;
+    auto id = it->second;
+    if (keep_ringing) {
+        auto c = calls_.find(id);
+        if (c != calls_.end() && c->second->callee == user_id && !c->second->active) return;
     }
+    end_call(id, "disconnected", user_id);
+}
+
+void App::deliver_ringing(int64_t user_id) {
+    auto it = user_call_.find(user_id);
+    if (it == user_call_.end()) return;
+    auto c = calls_.find(it->second);
+    if (c == calls_.end() || c->second->callee != user_id || c->second->active) return;
+    const auto& call = *c->second;
+    notify(user_id, event("call_incoming", {{"call_id", call.id}, {"user_id", call.caller_uuid}, {"msg", call.offer}}));
 }
 
 void App::op_call(Request r) {
@@ -604,14 +633,19 @@ void App::op_call(Request r) {
     if (!crypto::is_uuid(call_id) || calls_.count(call_id)) throw ApiError("bad_request");
     if (store_.relation(me.id, other.id) != Relation::friends) throw ApiError("not_found");
     if (user_call_.count(me.id)) throw ApiError("in_call");
-    auto online = online_.find(other.id);
-    if (online == online_.end() || online->second.expired()) throw ApiError("offline");
     if (user_call_.count(other.id)) throw ApiError("busy");
+    auto online = online_.find(other.id);
+    bool connected = online != online_.end() && !online->second.expired();
+    // The push also goes to a phone that looks connected: its socket may be dead without the server knowing yet.
+    auto push_token = push_.enabled() ? store_.push_token(other.id) : std::nullopt;
+    if (!connected && !push_token) throw ApiError("offline");
 
     auto call = std::make_shared<Call>();
     call->id = call_id;
     call->caller = me.id;
     call->callee = other.id;
+    call->caller_uuid = me.uuid;
+    call->offer = msg;
     call->ring_timer = std::make_unique<asio::steady_timer>(ioc_, kRingTimeout);
     call->ring_timer->async_wait([this, call_id](const boost::system::error_code& ec) {
         if (ec) return;
@@ -623,6 +657,7 @@ void App::op_call(Request r) {
     user_call_[other.id] = call_id;
 
     notify(other.id, event("call_incoming", {{"call_id", call_id}, {"user_id", me.uuid}, {"msg", msg}}));
+    if (push_token) push_.wake_for_call(*push_token);
     reply(r);
 }
 

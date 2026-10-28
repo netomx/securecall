@@ -32,7 +32,7 @@ Licencia: **AGPL-3.0**. Paquete Android: `com.cim.securecall`. Nombre de la app:
 │ UI · Room/SQLCipher      │──────────────────▶│ call.l8.nz · nginx :443  │
 │ libwebrtc                │                   │   └▶ sc-server (C++20)    │
 │ core C++ (JNI, libsodium)│                   │        SQLite (WAL)       │
-└───────────┬──────────────┘                   │        FCM HTTP v1 (curl)│
+└───────────┬──────────────┘                   │        FCM HTTP v1 (Beast)│
             │  SRTP + frame E2E (UDP)           │ coturn :3478/:5349       │
             └──── P2P directo, o vía TURN ─────▶│   relay 49152-65535/udp  │
                                                 └──────────────────────────┘
@@ -135,9 +135,9 @@ profundidad y requiere compilar libwebrtc propio.
 ```
 A                         sc-server                       B
 │ call_offer{to, E2E(sdp+noise1)} ─▶│                     │
-│                                   │─ (offline) FCM {} ─▶│ despierta
+│                                   │─ FCM {"t":"call"} ─▶│ despierta
 │                                   │◀── WSS connect ─────│
-│                                   │── call_offer ──────▶│ suena (ConnectionService)
+│                                   │── call_incoming ───▶│ suena (servicio phoneCall + CallStyle)
 │◀── call_answer{E2E(sdp+noise2)} ──│◀────────────────────│
 │◀════════ ICE: P2P o TURN (SRTP + frames E2E) ══════════▶│
 ```
@@ -151,23 +151,34 @@ A                         sc-server                       B
 
 ## 7. Push (FCM)
 
-- `data` message de alta prioridad, payload `{"v":1}`. **Sin nombre, sin ID de quien llama.**
-- La app despierta, abre el WSS, recibe la `call_offer` pendiente y muestra una notificación de
-  pantalla completa (`CallStyle`) con `ConnectionService` / Telecom.
-- El servidor firma un JWT con la cuenta de servicio de Firebase y llama a la API HTTP v1 con libcurl.
-- Sin Google Play Services no hay push (UnifiedPush como opción futura).
+- `data` message de alta prioridad (TTL 40 s), payload `{"t":"call"}`. **Sin nombre, sin ID de quien
+  llama, sin ID de llamada.** Google solo sabe que a ese teléfono le llegó "una llamada".
+- El token FCM va con la sesión (`set_push`): cerrar sesión o entrar en otro teléfono lo borra.
+- El push se manda aunque el teléfono parezca conectado (su socket puede estar muerto sin que el
+  servidor lo sepa todavía); la app comprueba su conexión con un `ping` y reconecta si hace falta.
+- Mientras suena, la llamada sobrevive a que el socket de quien recibe se caiga: al volver a
+  autenticarse recibe `call_incoming` otra vez. Una vez contestada, perder el socket la termina.
+- La app arranca un servicio en primer plano de tipo `phoneCall` cuyo aviso es la notificación de
+  llamada entrante (`CallStyle`, pantalla completa con el teléfono bloqueado, Contestar/Rechazar);
+  al contestar pasa a `phoneCall|microphone`. Si nadie contesta: aviso de llamada perdida.
+- El servidor firma un JWT RS256 con la cuenta de servicio de Firebase (`/etc/kalloq/fcm.json`),
+  lo cambia por un token OAuth (cache 55 min) y llama a la API HTTP v1, con Boost.Beast + OpenSSL.
+- Sin `google-services.json` en la compilación, o sin Google Play Services, no hay push: la app
+  lo indica en Ajustes y solo recibe llamadas mientras está viva (UnifiedPush como opción futura).
+- **ConnectionService / Telecom: pendiente.** Integrarse con Telecom cambia quién controla el audio
+  (altavoz/Bluetooth) y se hará por separado, cuando lo actual esté probado en teléfonos reales.
 
 ---
 
 ## 8. Stack
 
 **Servidor (Debian):** C++20, CMake, Boost.Asio/Beast, libsodium, SQLite (WAL), nlohmann/json,
-spdlog, libcurl, OpenSSL (JWT para FCM). Corre como servicio systemd con usuario sin privilegios,
+spdlog, OpenSSL (TLS y JWT para FCM). Corre como servicio systemd con usuario sin privilegios,
 detrás de nginx + certbot. coturn instalado desde apt.
 
 **Android:** Kotlin, Jetpack Compose, minSdk 26, `io.github.webrtc-sdk:android`, Tink (Ed25519, X25519),
 AES-GCM de la plataforma, Android Keystore, ZXing (generar y leer QR),
-Firebase Messaging, Telecom `ConnectionService`. Idioma por app con `AppCompatDelegate.setApplicationLocales`.
+Firebase Messaging (sin el plugin de Google Services: `build.gradle.kts` lee `google-services.json`). Idioma por app con `AppCompatDelegate.setApplicationLocales`.
 
 **Protocolo de señalización:** JSON sobre WSS, versionado (`"v":1`), fácil de reutilizar en iOS.
 
@@ -196,7 +207,7 @@ secure-call/
 | 2 | ✅ Android: login/registro, código de recuperación, amigos por QR/enlace, ES/EN (`apps/android`) |
 | 3 | ✅ Llamadas de voz WebRTC (señalización + TURN), silenciar, altavoz, Bluetooth, servicio en primer plano. Sin capa E2E extra todavía: hoy el audio va cifrado con DTLS-SRTP entre los teléfonos, pero las huellas DTLS pasan por el servidor sin verificar |
 | 4 | ✅ E2E: Noise KKpsk2 por llamada (SDP e ICE cifrados, huellas DTLS autenticadas), código de seguridad en llamada, verificación en persona por QR con PSK |
-| 5 | Push FCM + ConnectionService (recibir llamadas con la app cerrada) |
+| 5 | ✅ Push FCM (recibir llamadas con la app cerrada), notificación de llamada con Contestar/Rechazar, llamadas perdidas, audio no capturable por otras apps · pendiente: ConnectionService/Telecom |
 | 6 | Endurecimiento: rate limits, fuzzing del protocolo, revisión de seguridad, release |
 
 ---

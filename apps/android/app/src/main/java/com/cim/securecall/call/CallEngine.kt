@@ -1,6 +1,8 @@
 package com.cim.securecall.call
 
 import android.content.Context
+import android.media.AudioAttributes
+import android.os.Build
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -18,6 +20,13 @@ import org.webrtc.audio.JavaAudioDeviceModule
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
+/** Call playback; other apps, including system screen recorders, may not capture it. */
+fun callAudioAttributes(): AudioAttributes = AudioAttributes.Builder()
+    .setUsage(AudioAttributes.USAGE_VOICE_COMMUNICATION)
+    .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+    .apply { if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) setAllowedCapturePolicy(AudioAttributes.ALLOW_CAPTURE_BY_NONE) }
+    .build()
+
 /** One audio-only WebRTC peer connection at a time (DTLS-SRTP, Opus). */
 class CallEngine(private val context: Context, private val scope: CoroutineScope) {
 
@@ -34,6 +43,7 @@ class CallEngine(private val context: Context, private val scope: CoroutineScope
         val adm = JavaAudioDeviceModule.builder(context.applicationContext)
             .setUseHardwareAcousticEchoCanceler(true)
             .setUseHardwareNoiseSuppressor(true)
+            .setAudioAttributes(callAudioAttributes())
             .createAudioDeviceModule()
         PeerConnectionFactory.builder().setAudioDeviceModule(adm).createPeerConnectionFactory()
     }
