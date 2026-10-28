@@ -1,7 +1,7 @@
 # Kalloq — Arquitectura (v0.1)
 
 App de llamadas de **voz 1 a 1** cifradas de extremo a extremo (E2E).
-Cliente Android (iOS en el futuro) + servidor C++ en Debian 12. Host: `call.l8.nz`.
+Cliente Android (iOS en el futuro) + servidor C++ en Ubuntu 24.04 LTS. Host: `call.l8.nz`.
 Licencia: **AGPL-3.0**. Paquete Android: `com.cim.securecall`. Nombre de la app: **Kalloq**.
 
 ---
@@ -19,7 +19,7 @@ Licencia: **AGPL-3.0**. Paquete Android: `com.cim.securecall`. Nombre de la app:
 | Push | FCM, mensaje vacío de alta prioridad solo para despertar la app |
 | Escala | 1 servidor, < 1000 usuarios |
 | Idioma | Español / Inglés, seleccionable en Ajustes |
-| Compilación | Directo en Debian 12 |
+| Compilación | Directo en el servidor (Ubuntu 24.04) |
 | Usuario | Privado (solo para iniciar sesión, nadie más lo ve). 6–32 caracteres `a-z 0-9 _ .`, sin distinguir mayúsculas |
 
 ---

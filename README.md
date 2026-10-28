@@ -11,12 +11,12 @@ Llamadas de voz 1 a 1 cifradas de extremo a extremo, entre teléfonos.
 | Carpeta | Contenido |
 |---|---|
 | `core/` | Criptografía compartida en C++ (Android vía JNI, iOS en el futuro) |
-| `server/` | Servidor de señalización en C++ para Debian 12 |
+| `server/` | Servidor de señalización en C++ (Ubuntu 24.04) |
 | `android/` | App Android (Kotlin, Jetpack Compose) |
 | `deploy/` | Configuración de nginx, coturn y systemd |
 | `docs/` | [Arquitectura](docs/ARQUITECTURA.md) |
 
-Estado: diseño (fase 0).
+Estado: fase 0 lista (nginx + TLS + coturn en `call.l8.nz`). Siguiente: fase 1, `sc-server`.
 
 ## Licencia
 
