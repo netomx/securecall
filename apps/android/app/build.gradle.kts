@@ -15,7 +15,9 @@ configure<com.android.build.api.dsl.ApplicationExtension> {
         versionCode = 3
         versionName = "0.3.0"
         // Phones (arm) and the x86_64 emulator; drops 32-bit x86 to keep the APK smaller.
-        ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64") }
+        // `-Pabis=arm64-v8a` builds a single-ABI APK small enough to send to a phone.
+        val abis = (project.findProperty("abis") as String?)?.split(",") ?: listOf("arm64-v8a", "armeabi-v7a", "x86_64")
+        ndk { abiFilters += abis }
     }
 
     buildTypes {
