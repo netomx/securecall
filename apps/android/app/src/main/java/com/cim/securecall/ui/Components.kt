@@ -144,6 +144,7 @@ fun noticeText(n: Notice): String = when (n) {
             "self" -> R.string.err_self
             "network" -> R.string.err_network
             "mismatch" -> R.string.err_mismatch
+            "mic" -> R.string.err_mic
             else -> R.string.err_generic
         }
     )

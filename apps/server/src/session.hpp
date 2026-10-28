@@ -37,7 +37,7 @@ public:
     const std::string& ip() const { return ip_; }
 
     std::optional<int64_t> user_id;  // set once authenticated
-    TokenBucket msg_bucket{40, 10};  // flood protection: burst 40, 10 msg/s
+    TokenBucket msg_bucket{80, 20};  // flood protection: burst 80, 20 msg/s (ICE candidates come in bursts)
 
 private:
     void on_request(beast::error_code ec, std::size_t);

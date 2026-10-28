@@ -112,6 +112,11 @@ App::App(asio::io_context& ioc, Config cfg)
         {"unblock", {&App::op_unblock, true}},
         {"contacts", {&App::op_contacts, true}},
         {"turn", {&App::op_turn, true}},
+        {"call", {&App::op_call, true}},
+        {"call_answer", {&App::op_call_answer, true}},
+        {"call_ice", {&App::op_call_ice, true}},
+        {"call_reject", {&App::op_call_reject, true}},
+        {"call_end", {&App::op_call_end, true}},
     };
     prune_limits();
 }
@@ -163,6 +168,7 @@ void App::on_open(const std::shared_ptr<Session>& s) {
 
 void App::on_closed(Session& s) {
     --connections_;
+    if (s.user_id) drop_calls(*s.user_id);
     unbind(s);
 }
 
@@ -210,6 +216,7 @@ void App::start_session(const Request& r, const User& user, Json extra) {
 void App::bind(const std::shared_ptr<Session>& s, int64_t user_id) {
     if (auto it = online_.find(user_id); it != online_.end()) {
         if (auto old = it->second.lock(); old && old != s) {
+            drop_calls(user_id);
             old->user_id.reset();
             old->send(dump(event("session_revoked")));
             old->close();
@@ -550,6 +557,103 @@ void App::op_turn(Request r) {
               {"username", username},
               {"credential", crypto::turn_password(cfg_.turn_secret, username)},
               {"ttl", cfg_.turn_ttl}});
+}
+
+// ---------------------------------------------------------------------------
+// Calls
+
+namespace {
+constexpr std::size_t kMaxSdp = 12 * 1024;
+constexpr std::size_t kMaxCandidate = 2048;
+constexpr auto kRingTimeout = std::chrono::seconds(45);
+}  // namespace
+
+std::shared_ptr<App::Call> App::call_for(const Request& r) {
+    const auto& id = str_param(r.body, "call_id", 1, 64);
+    auto it = calls_.find(id);
+    auto me = *r.session->user_id;
+    if (it == calls_.end() || (it->second->caller != me && it->second->callee != me)) throw ApiError("not_found");
+    return it->second;
+}
+
+void App::end_call(const std::string& call_id, const char* reason, int64_t skip) {
+    auto it = calls_.find(call_id);
+    if (it == calls_.end()) return;
+    auto call = it->second;
+    calls_.erase(it);
+    if (call->ring_timer) call->ring_timer->cancel();
+    for (auto uid : {call->caller, call->callee}) {
+        if (auto u = user_call_.find(uid); u != user_call_.end() && u->second == call_id) user_call_.erase(u);
+        if (uid != skip) notify(uid, event("call_ended", {{"call_id", call_id}, {"reason", reason}}));
+    }
+}
+
+void App::drop_calls(int64_t user_id) {
+    if (auto it = user_call_.find(user_id); it != user_call_.end()) {
+        auto id = it->second;
+        end_call(id, "disconnected", user_id);
+    }
+}
+
+void App::op_call(Request r) {
+    auto me = current_user(r);
+    auto other = other_user(r);
+    const auto& call_id = str_param(r.body, "call_id", 1, 64);
+    const auto& sdp = str_param(r.body, "sdp", 1, kMaxSdp);
+    if (!crypto::is_uuid(call_id) || calls_.count(call_id)) throw ApiError("bad_request");
+    if (store_.relation(me.id, other.id) != Relation::friends) throw ApiError("not_found");
+    if (user_call_.count(me.id)) throw ApiError("in_call");
+    auto online = online_.find(other.id);
+    if (online == online_.end() || online->second.expired()) throw ApiError("offline");
+    if (user_call_.count(other.id)) throw ApiError("busy");
+
+    auto call = std::make_shared<Call>();
+    call->id = call_id;
+    call->caller = me.id;
+    call->callee = other.id;
+    call->ring_timer = std::make_unique<asio::steady_timer>(ioc_, kRingTimeout);
+    call->ring_timer->async_wait([this, call_id](const boost::system::error_code& ec) {
+        if (ec) return;
+        auto it = calls_.find(call_id);
+        if (it != calls_.end() && !it->second->active) end_call(call_id, "timeout", 0);
+    });
+    calls_[call_id] = call;
+    user_call_[me.id] = call_id;
+    user_call_[other.id] = call_id;
+
+    notify(other.id, event("call_incoming", {{"call_id", call_id}, {"user_id", me.uuid}, {"sdp", sdp}}));
+    reply(r);
+}
+
+void App::op_call_answer(Request r) {
+    auto call = call_for(r);
+    const auto& sdp = str_param(r.body, "sdp", 1, kMaxSdp);
+    if (call->callee != *r.session->user_id || call->active) throw ApiError("bad_request");
+    call->active = true;
+    call->ring_timer->cancel();
+    notify(call->caller, event("call_answered", {{"call_id", call->id}, {"sdp", sdp}}));
+    reply(r);
+}
+
+void App::op_call_ice(Request r) {
+    auto call = call_for(r);
+    auto cand = r.body.find("candidate");
+    if (cand == r.body.end() || !cand->is_object() || cand->dump().size() > kMaxCandidate) throw ApiError("bad_request");
+    notify(peer_of(*call, *r.session->user_id), event("call_ice", {{"call_id", call->id}, {"candidate", *cand}}));
+    reply(r);
+}
+
+void App::op_call_reject(Request r) {
+    auto call = call_for(r);
+    if (call->callee != *r.session->user_id || call->active) throw ApiError("bad_request");
+    end_call(call->id, "rejected", call->callee);
+    reply(r);
+}
+
+void App::op_call_end(Request r) {
+    auto call = call_for(r);
+    end_call(call->id, "hangup", *r.session->user_id);
+    reply(r);
 }
 
 }  // namespace kq

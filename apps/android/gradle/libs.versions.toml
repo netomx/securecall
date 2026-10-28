@@ -20,6 +20,7 @@ kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-
 kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version = "1.9.0" }
 tink-android = { group = "com.google.crypto.tink", name = "tink-android", version = "1.13.0" }
 zxing-core = { group = "com.google.zxing", name = "core", version = "3.5.3" }
+webrtc = { group = "io.github.webrtc-sdk", name = "android", version = "144.7559.15" }
 zxing-android-embedded = { group = "com.journeyapps", name = "zxing-android-embedded", version = "4.3.0" }
 
 [plugins]

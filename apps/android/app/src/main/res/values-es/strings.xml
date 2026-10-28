@@ -65,7 +65,6 @@
     <string name="key_changed_body">Puede ser un teléfono nuevo o alguien intentando interceptarte. Confírmalo con tu amigo antes de confiar en ella.</string>
     <string name="trust_key">Confiar en la nueva llave</string>
     <string name="call">Llamar</string>
-    <string name="calls_soon">Las llamadas llegan en la fase 3</string>
     <string name="remove_friend">Eliminar amigo</string>
     <string name="block">Bloquear</string>
     <string name="unblock">Desbloquear</string>
@@ -118,4 +117,27 @@
     <string name="err_network">No se puede conectar al servidor</string>
     <string name="err_mismatch">Las contraseñas no coinciden</string>
     <string name="err_generic">Algo salió mal</string>
+    <!-- Calls -->
+    <string name="call_encrypted">Llamada cifrada</string>
+    <string name="call_calling">Llamando…</string>
+    <string name="call_incoming">Llamada entrante</string>
+    <string name="call_connecting">Conectando…</string>
+    <string name="call_answer">Contestar</string>
+    <string name="call_decline">Rechazar</string>
+    <string name="call_hangup">Colgar</string>
+    <string name="call_mute">Silenciar</string>
+    <string name="call_speaker">Altavoz</string>
+    <string name="call_ended">Llamada terminada</string>
+    <string name="call_end_rejected">Rechazada</string>
+    <string name="call_end_busy">Ocupado</string>
+    <string name="call_end_offline">No está conectado ahora</string>
+    <string name="call_end_timeout">Sin respuesta</string>
+    <string name="call_end_disconnected">Se perdió la conexión</string>
+    <string name="call_end_failed">No se pudo conectar la llamada</string>
+    <string name="call_end_in_call">Ya estás en una llamada</string>
+    <string name="err_mic">Kalloq necesita el micrófono para llamar</string>
+    <string name="notif_channel_incoming">Llamadas entrantes</string>
+    <string name="notif_channel_ongoing">Llamada en curso</string>
+    <string name="notif_incoming_text">%1$s te está llamando</string>
+    <string name="notif_ongoing_text">Llamada con %1$s</string>
 </resources>

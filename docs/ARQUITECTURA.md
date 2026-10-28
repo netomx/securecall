@@ -179,7 +179,7 @@ secure-call/
 | 0 | ✅ Repo, servidor: nginx + certbot + coturn |
 | 1 | ✅ `sc-server`: registro, login, recuperación, sesiones, amigos, llaves públicas ([protocolo](PROTOCOLO.md)) |
 | 2 | ✅ Android: login/registro, código de recuperación, amigos por QR/enlace, ES/EN (`apps/android`) |
-| 3 | Llamadas WebRTC (señalización + TURN), sin capa E2E extra todavía |
+| 3 | ✅ Llamadas de voz WebRTC (señalización + TURN), silenciar, altavoz, Bluetooth, servicio en primer plano. Sin capa E2E extra todavía: hoy el audio va cifrado con DTLS-SRTP entre los teléfonos, pero las huellas DTLS pasan por el servidor sin verificar |
 | 4 | `core`: Noise KKpsk2 + cifrado de frames + verificación por QR |
 | 5 | Push FCM + ConnectionService (recibir llamadas con la app cerrada) |
 | 6 | Endurecimiento: rate limits, fuzzing del protocolo, revisión de seguridad, release |

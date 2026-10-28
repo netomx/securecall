@@ -70,6 +70,26 @@ private:
     void op_contacts(Request r);
     // Media
     void op_turn(Request r);
+    // Calls (signaling relay; SDP and ICE are opaque to the server)
+    void op_call(Request r);
+    void op_call_answer(Request r);
+    void op_call_ice(Request r);
+    void op_call_reject(Request r);
+    void op_call_end(Request r);
+
+    struct Call {
+        std::string id;
+        int64_t caller = 0;
+        int64_t callee = 0;
+        bool active = false;  // answered
+        std::unique_ptr<boost::asio::steady_timer> ring_timer;
+    };
+    // The call `user_id` is in, checked to belong to it; throws not_found otherwise.
+    std::shared_ptr<Call> call_for(const Request& r);
+    int64_t peer_of(const Call& c, int64_t user_id) const { return c.caller == user_id ? c.callee : c.caller; }
+    // Removes the call and sends call_ended to both sides except `skip` (who caused it).
+    void end_call(const std::string& call_id, const char* reason, int64_t skip);
+    void drop_calls(int64_t user_id);
 
     template <class F>
     void guarded(const Request& r, F&& f);
@@ -99,6 +119,8 @@ private:
     boost::asio::steady_timer prune_timer_;
     std::unordered_map<std::string, Op> ops_;
     std::unordered_map<int64_t, std::weak_ptr<Session>> online_;
+    std::unordered_map<std::string, std::shared_ptr<Call>> calls_;
+    std::unordered_map<int64_t, std::string> user_call_;  // user -> call they are in
     std::string dummy_hash_;  // verified against when the username does not exist (constant timing)
     int pending_jobs_ = 0;
     int connections_ = 0;

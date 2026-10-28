@@ -1,6 +1,14 @@
 package com.cim.securecall.ui
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
+import com.cim.securecall.Notice
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.imePadding
@@ -22,7 +30,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import com.cim.securecall.AppViewModel
+import com.cim.securecall.AppController
 import com.cim.securecall.Phase
 import com.cim.securecall.R
 import com.cim.securecall.UiState
@@ -58,9 +66,30 @@ private val StackSaver = listSaver<List<Screen>, String>(
     },
 )
 
+/** Runs `action` once RECORD_AUDIO is granted, asking for it first if needed. */
 @Composable
-fun AppRoot(vm: AppViewModel) {
+private fun rememberWithMic(onDenied: () -> Unit): ((() -> Unit) -> Unit) {
+    val context = LocalContext.current
+    var pending by remember { mutableStateOf<(() -> Unit)?>(null) }
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) pending?.invoke() else onDenied()
+        pending = null
+    }
+    return { action ->
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+            action()
+        } else {
+            pending = action
+            launcher.launch(Manifest.permission.RECORD_AUDIO)
+        }
+    }
+}
+
+@Composable
+fun AppRoot(vm: AppController) {
     val ui by vm.ui.collectAsState()
+    val call by vm.call.collectAsState()
+    val withMic = rememberWithMic { vm.notice(Notice.Error("mic")) }
     val snackbar = remember { SnackbarHostState() }
     val notice = ui.notice
     val noticeMessage = notice?.let { noticeText(it) }
@@ -79,7 +108,21 @@ fun AppRoot(vm: AppViewModel) {
                 Phase.Loading -> CircularProgressIndicator(Modifier.align(Alignment.Center))
                 Phase.LoggedOut -> AuthFlow(vm, ui)
                 is Phase.ShowRecovery -> RecoveryCodeScreen(phase.code, onDone = vm::recoverySaved)
-                Phase.LoggedIn -> MainFlow(vm, ui)
+                Phase.LoggedIn -> {
+                    MainFlow(vm, ui, onCall = { id -> withMic { vm.startCall(id) } })
+                    call?.let { c ->
+                        CallScreen(
+                            call = c,
+                            peerName = vm.displayName(c.peerId),
+                            onAccept = { withMic(vm::acceptCall) },
+                            onReject = vm::rejectCall,
+                            onHangUp = vm::hangUp,
+                            onMute = vm::toggleMute,
+                            onSpeaker = vm::toggleSpeaker,
+                            onBluetooth = vm::toggleBluetooth,
+                        )
+                    }
+                }
             }
             SnackbarHost(
                 snackbar,
@@ -104,11 +147,22 @@ fun AppRoot(vm: AppViewModel) {
 }
 
 @Composable
-private fun MainFlow(vm: AppViewModel, ui: UiState) {
+private fun MainFlow(vm: AppController, ui: UiState, onCall: (String) -> Unit) {
     var stack by rememberSaveable(stateSaver = StackSaver) { mutableStateOf(listOf<Screen>(Screen.Contacts)) }
     val push: (Screen) -> Unit = { stack = stack + it }
     val pop: () -> Unit = { stack = stack.dropLast(1) }
     BackHandler(enabled = stack.size > 1, onBack = pop)
+
+    // Android 13+: incoming calls are shown as a notification when the app is in the background.
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        val notifLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
+        val context = LocalContext.current
+        LaunchedEffect(Unit) {
+            if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                notifLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
+    }
 
     when (val top = stack.last()) {
         Screen.Contacts -> ContactsScreen(
@@ -116,6 +170,7 @@ private fun MainFlow(vm: AppViewModel, ui: UiState) {
             onAdd = { push(Screen.AddFriend) },
             onSettings = { push(Screen.Settings) },
             onOpen = { push(Screen.Contact(it)) },
+            onCall = onCall,
             onRespond = vm::respond,
             onCancelRequest = vm::removeFriend,
         )
@@ -129,6 +184,7 @@ private fun MainFlow(vm: AppViewModel, ui: UiState) {
                 ContactScreen(
                     friend = friend,
                     onBack = pop,
+                    onCall = { onCall(friend.id) },
                     onAlias = { vm.setAlias(friend.id, it) },
                     onTrustKey = { vm.trustKey(friend.id) },
                     onRemove = { vm.removeFriend(friend.id) },
@@ -140,7 +196,7 @@ private fun MainFlow(vm: AppViewModel, ui: UiState) {
 }
 
 @Composable
-private fun AuthFlow(vm: AppViewModel, ui: UiState) {
+private fun AuthFlow(vm: AppController, ui: UiState) {
     var recovering by rememberSaveable { mutableStateOf(false) }
     BackHandler(enabled = recovering) { recovering = false }
     if (recovering) {
@@ -148,7 +204,7 @@ private fun AuthFlow(vm: AppViewModel, ui: UiState) {
             busy = ui.busy,
             onBack = { recovering = false },
             onRecover = vm::recover,
-            onMismatch = { vm.notice(com.cim.securecall.Notice.Error("mismatch")) },
+            onMismatch = { vm.notice(Notice.Error("mismatch")) },
         )
     } else {
         AuthScreen(
@@ -156,7 +212,7 @@ private fun AuthFlow(vm: AppViewModel, ui: UiState) {
             onLogin = vm::login,
             onRegister = vm::register,
             onForgot = { recovering = true },
-            onMismatch = { vm.notice(com.cim.securecall.Notice.Error("mismatch")) },
+            onMismatch = { vm.notice(Notice.Error("mismatch")) },
         )
     }
 }

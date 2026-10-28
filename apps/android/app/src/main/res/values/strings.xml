@@ -66,7 +66,6 @@
     <string name="key_changed_body">It may be a new phone, or someone trying to intercept you. Confirm with your friend before trusting it.</string>
     <string name="trust_key">Trust new key</string>
     <string name="call">Call</string>
-    <string name="calls_soon">Calls arrive in phase 3</string>
     <string name="remove_friend">Remove friend</string>
     <string name="block">Block</string>
     <string name="unblock">Unblock</string>
@@ -121,4 +120,28 @@
     <string name="err_network">Can\'t reach the server</string>
     <string name="err_mismatch">Passwords don\'t match</string>
     <string name="err_generic">Something went wrong</string>
+    <!-- Calls -->
+    <string name="call_encrypted">Encrypted call</string>
+    <string name="call_calling">Calling…</string>
+    <string name="call_incoming">Incoming call</string>
+    <string name="call_connecting">Connecting…</string>
+    <string name="call_answer">Answer</string>
+    <string name="call_decline">Decline</string>
+    <string name="call_hangup">Hang up</string>
+    <string name="call_mute">Mute</string>
+    <string name="call_speaker">Speaker</string>
+    <string name="call_bluetooth" translatable="false">Bluetooth</string>
+    <string name="call_ended">Call ended</string>
+    <string name="call_end_rejected">Declined</string>
+    <string name="call_end_busy">Busy</string>
+    <string name="call_end_offline">Not connected right now</string>
+    <string name="call_end_timeout">No answer</string>
+    <string name="call_end_disconnected">Connection lost</string>
+    <string name="call_end_failed">Could not connect the call</string>
+    <string name="call_end_in_call">You are already in a call</string>
+    <string name="err_mic">Kalloq needs the microphone to call</string>
+    <string name="notif_channel_incoming">Incoming calls</string>
+    <string name="notif_channel_ongoing">Ongoing call</string>
+    <string name="notif_incoming_text">%1$s is calling</string>
+    <string name="notif_ongoing_text">Call with %1$s</string>
 </resources>

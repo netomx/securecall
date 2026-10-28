@@ -82,7 +82,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.os.LocaleListCompat
-import com.cim.securecall.AppViewModel
+import com.cim.securecall.AppController
 import com.cim.securecall.Friend
 import com.cim.securecall.R
 import com.cim.securecall.UiState
@@ -143,6 +143,7 @@ fun ContactsScreen(
     onAdd: () -> Unit,
     onSettings: () -> Unit,
     onOpen: (String) -> Unit,
+    onCall: (String) -> Unit,
     onRespond: (String, Boolean) -> Unit,
     onCancelRequest: (String) -> Unit,
 ) {
@@ -210,6 +211,11 @@ fun ContactsScreen(
                                 f.keyChanged -> Text(stringResource(R.string.key_changed_short), color = MaterialTheme.colorScheme.error)
                                 f.fingerprint != null -> Text(f.fingerprint.take(19), fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall)
                                 else -> Text(stringResource(R.string.no_key), style = MaterialTheme.typography.bodySmall)
+                            }
+                        },
+                        trailingContent = {
+                            IconButton(onClick = { onCall(f.id) }) {
+                                Icon(Icons.Default.Call, stringResource(R.string.call), tint = MaterialTheme.colorScheme.primary)
                             }
                         },
                     )
@@ -324,6 +330,7 @@ fun AddFriendScreen(ui: UiState, onBack: () -> Unit, onAdd: (String) -> Unit) {
 fun ContactScreen(
     friend: Friend,
     onBack: () -> Unit,
+    onCall: () -> Unit,
     onAlias: (String) -> Unit,
     onTrustKey: () -> Unit,
     onRemove: () -> Unit,
@@ -364,18 +371,11 @@ fun ContactScreen(
             )
             Spacer(Modifier.height(16.dp))
 
-            Button(onClick = {}, enabled = false, modifier = Modifier.fillMaxWidth().height(52.dp)) {
+            Button(onClick = onCall, modifier = Modifier.fillMaxWidth().height(52.dp)) {
                 Icon(Icons.Default.Call, null)
                 Spacer(Modifier.size(8.dp))
                 Text(stringResource(R.string.call))
             }
-            Text(
-                stringResource(R.string.calls_soon),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
-                textAlign = TextAlign.Center,
-            )
 
             SectionTitle(stringResource(R.string.user_id), Modifier.padding(top = 16.dp))
             Text(friend.id, fontFamily = FontFamily.Monospace, modifier = Modifier.padding(horizontal = 16.dp))
@@ -430,7 +430,7 @@ private fun SettingRow(icon: ImageVector, text: String, color: Color = Color.Uns
 }
 
 @Composable
-fun SettingsScreen(vm: AppViewModel, ui: UiState, onBack: () -> Unit) {
+fun SettingsScreen(vm: AppController, ui: UiState, onBack: () -> Unit) {
     val context = LocalContext.current
     var dialog by remember { mutableStateOf<Dialog?>(null) }
     val currentLang = remember { AppCompatDelegate.getApplicationLocales().toLanguageTags().substringBefore(',').substringBefore('-') }

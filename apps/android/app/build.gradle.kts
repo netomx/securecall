@@ -12,8 +12,10 @@ configure<com.android.build.api.dsl.ApplicationExtension> {
         applicationId = "com.cim.securecall"
         minSdk = 26
         targetSdk = 36
-        versionCode = 2
-        versionName = "0.2.1"
+        versionCode = 3
+        versionName = "0.3.0"
+        // Phones (arm) and the x86_64 emulator; drops 32-bit x86 to keep the APK smaller.
+        ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64") }
     }
 
     buildTypes {
@@ -53,4 +55,5 @@ dependencies {
     implementation(libs.tink.android)
     implementation(libs.zxing.core)
     implementation(libs.zxing.android.embedded)
+    implementation(libs.webrtc)
 }

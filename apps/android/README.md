@@ -12,7 +12,11 @@ Kotlin + Jetpack Compose, minSdk 26, paquete `com.cim.securecall`.
 | `net/ServerClient.kt` | Cliente WebSocket del [protocolo](../../docs/PROTOCOLO.md): petición/respuesta por `id` y flujo de eventos |
 | `data/LocalStore.kt` | Token de sesión y semilla de identidad cifrados con AES-256-GCM (llave en Android Keystore); alias y llaves fijadas |
 | `data/Identity.kt` | Llave de identidad Ed25519 (Tink), huella, parseo de IDs e invitaciones |
-| `AppViewModel.kt` | Sesión, reconexión con backoff, eventos del servidor, amigos, TOFU de llaves |
+| `AppController.kt` | Vive con el proceso (no con la pantalla): sesión, reconexión con backoff, eventos, amigos, TOFU de llaves y el flujo de llamada |
+| `call/CallEngine.kt` | WebRTC solo audio (Opus, DTLS-SRTP), ICE por goteo, cola de candidatos remotos |
+| `call/AudioRouter.kt` | Modo comunicación, foco de audio, auricular / altavoz / Bluetooth (cambia solo al conectar o desconectar el audífono), sensor de proximidad |
+| `call/CallService.kt` | Servicio en primer plano tipo micrófono y notificaciones de llamada entrante / en curso |
+| `call/CallTones.kt` | Timbre + vibración al recibir, tono de llamada al marcar |
 | `ui/` | Pantallas Compose: acceso, código de recuperación, contactos, agregar amigo (QR), contacto, ajustes |
 
 - Sin respaldo en la nube (`allowBackup=false`, `data_extraction_rules.xml`): llaves y token nunca salen del teléfono.
