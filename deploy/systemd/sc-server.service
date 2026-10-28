@@ -1,0 +1,42 @@
+[Unit]
+Description=Kalloq signaling server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=kalloq
+Group=kalloq
+ExecStart=/usr/local/bin/sc-server -c /etc/kalloq/sc-server.conf
+Restart=on-failure
+RestartSec=2
+StateDirectory=kalloq
+StateDirectoryMode=0700
+
+# Argon2id uses 64 MiB per hash worker
+MemoryMax=400M
+LimitNOFILE=8192
+
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+CapabilityBoundingSet=
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

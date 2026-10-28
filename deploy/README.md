@@ -6,7 +6,7 @@ Servidor: `72.11.156.223` (IPv4 únicamente, sin registro AAAA), **Ubuntu 24.04 
 |---|---|---|---|
 | nginx (TLS → sc-server) | 80, 443/tcp | `/etc/nginx/sites-available/call.l8.nz` | `nginx/call.l8.nz.conf` |
 | coturn (STUN/TURN) | 3478, 5349 tcp/udp · 49152–65535/udp | `/etc/turnserver.conf` | `coturn/turnserver.conf` |
-| sc-server | 127.0.0.1:8080 (solo local) | `/etc/kalloq/` | `server/` (fase 1) |
+| sc-server | 127.0.0.1:8080 (solo local) | `/etc/kalloq/sc-server.conf`, BD en `/var/lib/kalloq/` | `../apps/server/`, `sc-server.conf`, `systemd/sc-server.service` |
 | Let's Encrypt | — | `/etc/letsencrypt/` | `letsencrypt/renewal-hooks/deploy/kalloq.sh` |
 
 Secretos (nunca en el repo):
@@ -43,9 +43,32 @@ chown root:turnserver /etc/turnserver.conf && chmod 640 /etc/turnserver.conf
 
 El hook de renovación copia el certificado a `/etc/coturn/certs/` (coturn no puede leer `/etc/letsencrypt/live`) y recarga nginx y coturn. `certbot.timer` renueva solo.
 
+## sc-server
+
+```bash
+# Compilar (en el servidor)
+cmake -S apps/server -B apps/server/build -G Ninja -DCMAKE_BUILD_TYPE=Release
+cmake --build apps/server/build
+
+# Pruebas de integración (instancia temporal con rate_limits = false; ver el script)
+apt-get install -y python3-websockets
+python3 apps/server/tests/test_protocol.py ws://127.0.0.1:18080/ws
+
+# Instalar
+useradd --system --no-create-home --home-dir /var/lib/kalloq --shell /usr/sbin/nologin kalloq
+chown root:kalloq /etc/kalloq/turn_secret && chmod 640 /etc/kalloq/turn_secret
+install -m 644 deploy/sc-server.conf /etc/kalloq/sc-server.conf
+install -m 644 deploy/systemd/sc-server.service /etc/systemd/system/
+install -m 755 apps/server/build/sc-server /usr/local/bin/sc-server
+systemctl daemon-reload && systemctl enable --now sc-server
+```
+
+El servicio corre como `kalloq` con aislamiento de systemd (`systemd-analyze security sc-server` → 1.7 OK).
+La base de datos SQLite vive en `/var/lib/kalloq/kalloq.db` (modo 600).
+
 ## Credenciales TURN temporales (formato `use-auth-secret`)
 
 ```
-username = "<unix_expiry>:<user_id>"
+username = "<unix_expiry>:<12 caracteres aleatorios>"   # no revela el usuario a los logs de coturn
 password = base64(HMAC-SHA1(turn_secret, username))
 ```

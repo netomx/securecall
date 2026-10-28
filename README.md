@@ -10,13 +10,13 @@ Llamadas de voz 1 a 1 cifradas de extremo a extremo, entre teléfonos.
 
 | Carpeta | Contenido |
 |---|---|
-| `core/` | Criptografía compartida en C++ (Android vía JNI, iOS en el futuro) |
-| `server/` | Servidor de señalización en C++ (Ubuntu 24.04) |
-| `android/` | App Android (Kotlin, Jetpack Compose) |
+| `apps/core/` | Criptografía compartida en C++ (Android vía JNI, iOS en el futuro) |
+| `apps/server/` | Servidor de señalización en C++ (`sc-server`) — [protocolo](docs/PROTOCOLO.md) |
+| `apps/android/` | App Android (Kotlin, Jetpack Compose) |
 | `deploy/` | Configuración de nginx, coturn y systemd |
 | `docs/` | [Arquitectura](docs/ARQUITECTURA.md) |
 
-Estado: fase 0 lista (nginx + TLS + coturn en `call.l8.nz`). Siguiente: fase 1, `sc-server`.
+Estado: fases 0 y 1 listas: nginx + TLS + coturn, y `sc-server` (cuentas, amigos, llaves) en producción en `wss://call.l8.nz/ws`.
 
 ## Licencia
 

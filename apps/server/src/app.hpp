@@ -1,0 +1,112 @@
+#pragma once
+
+#include "config.hpp"
+#include "db.hpp"
+#include "ratelimit.hpp"
+#include "store.hpp"
+
+#include <boost/asio.hpp>
+#include <nlohmann/json.hpp>
+
+#include <cstdint>
+#include <memory>
+#include <string>
+#include <string_view>
+#include <unordered_map>
+
+namespace kq {
+
+class Session;
+using Json = nlohmann::json;
+
+struct Request {
+    std::shared_ptr<Session> session;
+    Json id;
+    Json body;
+};
+
+// Protocol logic: dispatches requests, tracks who is online and pushes events.
+class App {
+public:
+    App(boost::asio::io_context& ioc, Config cfg);
+    ~App();
+
+    const Config& config() const { return cfg_; }
+    int connections() const { return connections_; }
+
+    void on_open(const std::shared_ptr<Session>& s);
+    void on_closed(Session& s);
+    void handle(const std::shared_ptr<Session>& s, std::string_view text);
+
+private:
+    using Handler = void (App::*)(Request);
+    struct Op {
+        Handler fn;
+        bool needs_auth;
+    };
+
+    // Unauthenticated
+    void op_ping(Request r);
+    void op_register(Request r);
+    void op_login(Request r);
+    void op_auth(Request r);
+    void op_recover(Request r);
+    // Account
+    void op_whoami(Request r);
+    void op_logout(Request r);
+    void op_change_password(Request r);
+    void op_regen_recovery(Request r);
+    void op_delete_account(Request r);
+    // Keys and identity
+    void op_set_key(Request r);
+    void op_get_key(Request r);
+    void op_regen_id(Request r);
+    // Friends
+    void op_friend_request(Request r);
+    void op_friend_respond(Request r);
+    void op_friend_remove(Request r);
+    void op_block(Request r);
+    void op_unblock(Request r);
+    void op_contacts(Request r);
+    // Media
+    void op_turn(Request r);
+
+    template <class F>
+    void guarded(const Request& r, F&& f);
+    // Run CPU-heavy work (Argon2id) on the hash pool, then `done` back on the io thread.
+    template <class Work, class Done>
+    void offload(Request r, Work work, Done done);
+    // Verify the account password off-thread, then run `then` on the io thread.
+    template <class Then>
+    void with_password(Request r, Then then);
+
+    void reply(const Request& r, Json result = Json::object());
+    void fail(const Request& r, std::string_view code);
+    void start_session(const Request& r, const User& user, Json extra = Json::object());
+    void bind(const std::shared_ptr<Session>& s, int64_t user_id);
+    void unbind(Session& s);
+    void notify(int64_t user_id, const Json& event);
+    void notify_friends(int64_t user_id, const Json& event);
+    User current_user(const Request& r);
+    User other_user(const Request& r);
+    void prune_limits();
+
+    boost::asio::io_context& ioc_;
+    Config cfg_;
+    Db db_;
+    Store store_;
+    boost::asio::thread_pool pool_;
+    boost::asio::steady_timer prune_timer_;
+    std::unordered_map<std::string, Op> ops_;
+    std::unordered_map<int64_t, std::weak_ptr<Session>> online_;
+    std::string dummy_hash_;  // verified against when the username does not exist (constant timing)
+    int pending_jobs_ = 0;
+    int connections_ = 0;
+
+    RateLimiter ip_auth_;       // login / auth / recover attempts per IP
+    RateLimiter ip_register_;   // new accounts per IP
+    RateLimiter account_auth_;  // login / recover attempts per username
+    RateLimiter friend_reqs_;   // friend requests per account
+};
+
+}  // namespace kq

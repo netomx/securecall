@@ -38,9 +38,9 @@ Licencia: **AGPL-3.0**. Paquete Android: `com.cim.securecall`. Nombre de la app:
                                                 └──────────────────────────┘
 ```
 
-- **`core/`**: biblioteca C++ con toda la criptografía (libsodium): handshake por llamada,
+- **`apps/core/`**: biblioteca C++ con toda la criptografía (libsodium): handshake por llamada,
   cifrado de frames y formato de QR. Android la usa vía JNI y iOS la podrá reutilizar tal cual.
-- **`server/` (`sc-server`)**: señalización, cuentas, amigos, entrega de llaves públicas,
+- **`apps/server/` (`sc-server`)**: señalización, cuentas, amigos, entrega de llaves públicas,
   credenciales TURN temporales y push. **Nunca ve audio ni llaves privadas.**
 - **coturn**: relay TURN para cuando no hay P2P. Solo ve paquetes cifrados.
 - **nginx**: termina TLS (Let's Encrypt) y hace proxy del WebSocket a `sc-server` en localhost.
@@ -54,8 +54,8 @@ Un solo host: `call.l8.nz` para la señalización (443) y para coturn (3478/5349
 **Registro**
 1. El cliente envía `username` + `password` por WSS.
 2. El servidor guarda `argon2id(password)` y asigna `user_id` = UUIDv4 aleatorio.
-3. El cliente genera un **código de recuperación** (160 bits, en Base32 o 15 palabras) y lo
-   muestra **una sola vez** para que el usuario lo guarde. El servidor solo guarda `argon2id(código)`.
+3. El servidor genera un **código de recuperación** (160 bits, Base32 Crockford en 8 grupos de 4),
+   lo devuelve **una sola vez** y solo guarda `argon2id(código)`. La app lo muestra para que el usuario lo guarde.
 
 **Recuperación:** `username` + código + nueva contraseña. Se invalidan las sesiones y las llaves
 del dispositivo anterior, y se emite un código de recuperación nuevo.
@@ -70,7 +70,7 @@ Android Keystore. Un solo token activo por cuenta (= 1 dispositivo).
 ## 4. Llaves
 
 Cada dispositivo genera al instalarse o iniciar sesión:
-- `IK`: llave de identidad Ed25519 (firma) / X25519 (DH).
+- `IK`: llave de identidad Ed25519 (firma). Su forma X25519 (DH) se deriva de ella, así que el servidor solo guarda la pública Ed25519.
 - La privada se guarda cifrada con una llave del Android Keystore y nunca sale del teléfono.
 
 ### 4.1 Llave automática (TOFU)
@@ -162,9 +162,10 @@ Firebase Messaging, Telecom `ConnectionService`. Idioma por app con `AppCompatDe
 
 ```
 secure-call/
-├── core/        # C++ cripto compartida (Android/iOS) + tests
-├── server/      # sc-server (C++), esquema SQL, unidad systemd
-├── android/     # proyecto Android Studio
+├── apps/
+│   ├── core/    # C++ cripto compartida (Android/iOS) + tests
+│   ├── server/  # sc-server (C++) + pruebas de integración
+│   └── android/ # proyecto Android Studio
 ├── deploy/      # nginx, coturn, certbot, scripts de instalación Debian
 └── docs/        # arquitectura, protocolo, modelo de amenazas
 ```
@@ -175,8 +176,8 @@ secure-call/
 
 | # | Entregable |
 |---|---|
-| 0 | Repo, CI básico, servidor Debian: nginx + certbot + coturn |
-| 1 | `sc-server`: registro, login, recuperación, sesiones, amigos, llaves públicas |
+| 0 | ✅ Repo, servidor: nginx + certbot + coturn |
+| 1 | ✅ `sc-server`: registro, login, recuperación, sesiones, amigos, llaves públicas ([protocolo](PROTOCOLO.md)) |
 | 2 | Android: login/registro, código de recuperación, amigos por QR/enlace, ES/EN |
 | 3 | Llamadas WebRTC (señalización + TURN), sin capa E2E extra todavía |
 | 4 | `core`: Noise KKpsk2 + cifrado de frames + verificación por QR |
