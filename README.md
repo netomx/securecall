@@ -16,7 +16,9 @@ Llamadas de voz 1 a 1 cifradas de extremo a extremo, entre teléfonos.
 | `deploy/` | Configuración de nginx, coturn y systemd |
 | `docs/` | [Arquitectura](docs/ARQUITECTURA.md) |
 
-Estado: fases 0 y 1 listas: nginx + TLS + coturn, y `sc-server` (cuentas, amigos, llaves) en producción en `wss://call.l8.nz/ws`.
+Estado: fases 0, 1 y 2 listas: servidor en producción (`wss://call.l8.nz/ws`) y app Android con cuentas, código de recuperación, amigos por QR/enlace, llaves Ed25519 fijadas (TOFU) y ES/EN. Siguiente: fase 3, llamadas WebRTC.
+
+![Kalloq](docs/logo/kalloq.svg)
 
 ## Licencia
 

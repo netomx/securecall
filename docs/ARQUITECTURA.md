@@ -178,7 +178,7 @@ secure-call/
 |---|---|
 | 0 | ✅ Repo, servidor: nginx + certbot + coturn |
 | 1 | ✅ `sc-server`: registro, login, recuperación, sesiones, amigos, llaves públicas ([protocolo](PROTOCOLO.md)) |
-| 2 | Android: login/registro, código de recuperación, amigos por QR/enlace, ES/EN |
+| 2 | ✅ Android: login/registro, código de recuperación, amigos por QR/enlace, ES/EN (`apps/android`) |
 | 3 | Llamadas WebRTC (señalización + TURN), sin capa E2E extra todavía |
 | 4 | `core`: Noise KKpsk2 + cifrado de frames + verificación por QR |
 | 5 | Push FCM + ConnectionService (recibir llamadas con la app cerrada) |

@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tagline">Llamadas de voz privadas, cifradas de extremo a extremo</string>
+
+    <!-- Auth -->
+    <string name="login">Iniciar sesión</string>
+    <string name="register">Crear cuenta</string>
+    <string name="username">Usuario</string>
+    <string name="password">Contraseña</string>
+    <string name="confirm_password">Confirmar contraseña</string>
+    <string name="username_hint">6–32 caracteres: a–z, 0–9, _ y . — solo tú lo ves</string>
+    <string name="password_hint">Mínimo 10 caracteres</string>
+    <string name="show_password">Mostrar contraseña</string>
+    <string name="hide_password">Ocultar contraseña</string>
+    <string name="forgot_password">¿Olvidaste tu contraseña?</string>
+    <string name="recover_title">Recuperar cuenta</string>
+    <string name="recovery_code">Código de recuperación</string>
+    <string name="new_password">Nueva contraseña</string>
+    <string name="recover_action">Recuperar</string>
+    <string name="back">Atrás</string>
+
+    <!-- Recovery code -->
+    <string name="recovery_title">Guarda tu código de recuperación</string>
+    <string name="recovery_body">Es la única forma de recuperar tu cuenta si olvidas la contraseña. Solo se muestra una vez: anótalo y guárdalo en un lugar seguro.</string>
+    <string name="copy">Copiar</string>
+    <string name="copied">Copiado</string>
+    <string name="recovery_saved_check">Lo guardé en un lugar seguro</string>
+    <string name="continue_action">Continuar</string>
+
+    <!-- Contacts -->
+    <string name="add_friend">Agregar amigo</string>
+    <string name="settings">Ajustes</string>
+    <string name="status_connected">Conectado</string>
+    <string name="status_connecting">Conectando…</string>
+    <string name="status_offline">Sin conexión</string>
+    <string name="section_requests">Solicitudes de amistad</string>
+    <string name="section_friends">Amigos</string>
+    <string name="section_pending">Solicitudes enviadas</string>
+    <string name="accept">Aceptar</string>
+    <string name="reject">Rechazar</string>
+    <string name="cancel">Cancelar</string>
+    <string name="empty_contacts">Aún no tienes amigos. Comparte tu código QR o escanea el de un amigo.</string>
+    <string name="key_changed_short">⚠ La llave cambió</string>
+    <string name="no_key">Sin llave todavía</string>
+
+    <!-- Add friend -->
+    <string name="my_code">Tu código</string>
+    <string name="my_code_hint">Deja que tu amigo escanee este código o comparte tu enlace.</string>
+    <string name="share">Compartir</string>
+    <string name="share_text">Agrégame en Kalloq: %1$s</string>
+    <string name="scan_qr">Escanear código QR</string>
+    <string name="scan_prompt">Apunta al código QR de Kalloq de tu amigo</string>
+    <string name="friend_id_or_link">ID o enlace de tu amigo</string>
+    <string name="send_request">Enviar solicitud</string>
+    <string name="invite_title">¿Agregar contacto?</string>
+    <string name="invite_body">¿Enviar solicitud de amistad a %1$s?</string>
+
+    <!-- Contact detail -->
+    <string name="alias">Nombre (solo en este teléfono)</string>
+    <string name="save">Guardar</string>
+    <string name="user_id">ID</string>
+    <string name="fingerprint">Huella de la llave</string>
+    <string name="fingerprint_hint">Compárala en persona con tu amigo. La verificación escaneando un QR llega en la fase 4.</string>
+    <string name="key_changed_title">La llave de este contacto cambió</string>
+    <string name="key_changed_body">Puede ser un teléfono nuevo o alguien intentando interceptarte. Confírmalo con tu amigo antes de confiar en ella.</string>
+    <string name="trust_key">Confiar en la nueva llave</string>
+    <string name="call">Llamar</string>
+    <string name="calls_soon">Las llamadas llegan en la fase 3</string>
+    <string name="remove_friend">Eliminar amigo</string>
+    <string name="block">Bloquear</string>
+    <string name="unblock">Desbloquear</string>
+    <string name="confirm_remove">¿Eliminar a este amigo?</string>
+    <string name="confirm_block">¿Bloquear a este usuario? Ya no podrá enviarte solicitudes.</string>
+
+    <!-- Settings -->
+    <string name="account">Cuenta</string>
+    <string name="my_id">Mi ID</string>
+    <string name="regen_id">Nuevo ID</string>
+    <string name="regen_id_body">Tus amigos te conservan, pero quien tenga tu ID o código QR anterior ya no podrá encontrarte.</string>
+    <string name="language">Idioma</string>
+    <string name="lang_system">Predeterminado del sistema</string>
+    <string name="security">Seguridad</string>
+    <string name="change_password">Cambiar contraseña</string>
+    <string name="current_password">Contraseña actual</string>
+    <string name="new_recovery_code">Nuevo código de recuperación</string>
+    <string name="blocked_users">Usuarios bloqueados</string>
+    <string name="none">Ninguno</string>
+    <string name="logout">Cerrar sesión</string>
+    <string name="delete_account">Eliminar cuenta</string>
+    <string name="delete_account_body">Tu cuenta y tu lista de amigos se borran del servidor. No se puede deshacer.</string>
+    <string name="enter_password">Escribe tu contraseña para confirmar</string>
+    <string name="confirm">Confirmar</string>
+    <string name="about">Acerca de</string>
+    <string name="version">Versión %1$s</string>
+    <string name="server">Servidor: %1$s</string>
+
+    <!-- Notices -->
+    <string name="notice_revoked">Tu cuenta se abrió en otro dispositivo</string>
+    <string name="notice_session_expired">La sesión expiró, inicia sesión de nuevo</string>
+    <string name="notice_friend_request">Nueva solicitud de amistad</string>
+    <string name="notice_friend_accepted">Aceptaron tu solicitud de amistad</string>
+    <string name="notice_key_changed">La llave de un amigo cambió</string>
+    <string name="notice_request_sent">Solicitud enviada</string>
+    <string name="notice_now_friends">Ahora son amigos</string>
+    <string name="notice_password_changed">Contraseña cambiada</string>
+
+    <!-- Errors -->
+    <string name="err_invalid_username">Usuario inválido: 6–32 caracteres, a–z, 0–9, _ y .</string>
+    <string name="err_weak_password">La contraseña necesita al menos 10 caracteres</string>
+    <string name="err_username_taken">Ese usuario ya existe</string>
+    <string name="err_invalid_credentials">Usuario, contraseña o código incorrectos</string>
+    <string name="err_rate_limited">Demasiados intentos, espera unos minutos</string>
+    <string name="err_busy">El servidor está ocupado, intenta de nuevo</string>
+    <string name="err_not_found">Usuario no encontrado</string>
+    <string name="err_blocked">Bloqueaste a este usuario</string>
+    <string name="err_invalid_id">Eso no es un ID de Kalloq válido</string>
+    <string name="err_self">Ese es tu propio ID</string>
+    <string name="err_network">No se puede conectar al servidor</string>
+    <string name="err_mismatch">Las contraseñas no coinciden</string>
+    <string name="err_generic">Algo salió mal</string>
+</resources>

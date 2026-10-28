@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Themed icon (Android 13+): lock silhouette with the voice waves cut out. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="512"
+    android:viewportHeight="512">
+    <group
+        android:pivotX="256"
+        android:pivotY="256"
+        android:scaleX="0.62"
+        android:scaleY="0.62"
+        android:translateY="-6">
+        <path
+            android:pathData="M176,236 V184 A80,80 0 0,1 336,184 V236"
+            android:strokeColor="#FF000000"
+            android:strokeWidth="40"
+            android:strokeLineCap="round" />
+        <path
+            android:fillColor="#FF000000"
+            android:fillType="evenOdd"
+            android:pathData="M168,224 H344 A40,40 0 0,1 384,264 V376 A40,40 0 0,1 344,416 H168 A40,40 0 0,1 128,376 V264 A40,40 0 0,1 168,224 Z M240,320 A16,16 0 1,0 272,320 A16,16 0 1,0 240,320 Z" />
+    </group>
+</vector>

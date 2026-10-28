@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Full logo with rounded background (docs/logo/kalloq.svg), used inside the app. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="96dp"
+    android:height="96dp"
+    android:viewportWidth="512"
+    android:viewportHeight="512">
+    <path android:pathData="M112,0 H400 A112,112 0 0,1 512,112 V400 A112,112 0 0,1 400,512 H112 A112,112 0 0,1 0,400 V112 A112,112 0 0,1 112,0 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="linear"
+                android:startX="0"
+                android:startY="0"
+                android:endX="512"
+                android:endY="512">
+                <item android:offset="0" android:color="#FF14B8A6" />
+                <item android:offset="1" android:color="#FF0E5A73" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <path
+        android:pathData="M176,236 V184 A80,80 0 0,1 336,184 V236"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="40"
+        android:strokeLineCap="round" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M168,224 H344 A40,40 0 0,1 384,264 V376 A40,40 0 0,1 344,416 H168 A40,40 0 0,1 128,376 V264 A40,40 0 0,1 168,224 Z" />
+    <path
+        android:fillColor="#FF0F766E"
+        android:pathData="M240,320 A16,16 0 1,0 272,320 A16,16 0 1,0 240,320 Z" />
+    <path
+        android:pathData="M292,290 A44,44 0 0,1 292,350 M318,268 A76,76 0 0,1 318,372 M220,290 A44,44 0 0,0 220,350 M194,268 A76,76 0 0,0 194,372"
+        android:strokeColor="#FF0F766E"
+        android:strokeWidth="16"
+        android:strokeLineCap="round" />
+</vector>

@@ -15,14 +15,12 @@ compile_commands.json
 server/config.local.*
 
 # Android
-android/.gradle/
-android/build/
-android/app/build/
-android/local.properties
-android/.idea/
-android/captures/
-android/.externalNativeBuild/
-android/.cxx/
+.gradle/
+.kotlin/
+local.properties
+captures/
+.externalNativeBuild/
+.cxx/
 *.apk
 *.aab
 *.jks
@@ -42,3 +40,6 @@ firebase-service-account*.json
 *.iml
 .DS_Store
 Thumbs.db
+
+# Built APKs to share
+dist/
