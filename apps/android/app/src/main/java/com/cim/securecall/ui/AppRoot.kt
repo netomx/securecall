@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
@@ -69,20 +71,24 @@ fun AppRoot(vm: AppViewModel) {
         }
     }
 
-    Box(Modifier.fillMaxSize()) {
-        when (val phase = ui.phase) {
-            Phase.Loading -> CircularProgressIndicator(Modifier.align(Alignment.Center))
-            Phase.LoggedOut -> AuthFlow(vm, ui)
-            is Phase.ShowRecovery -> RecoveryCodeScreen(phase.code, onDone = vm::recoverySaved)
-            Phase.LoggedIn -> MainFlow(vm, ui)
+    // Surface sets the theme's background and content color, so plain Text follows dark mode
+    // on screens that have no Scaffold (login, recovery code).
+    Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+        Box(Modifier.fillMaxSize()) {
+            when (val phase = ui.phase) {
+                Phase.Loading -> CircularProgressIndicator(Modifier.align(Alignment.Center))
+                Phase.LoggedOut -> AuthFlow(vm, ui)
+                is Phase.ShowRecovery -> RecoveryCodeScreen(phase.code, onDone = vm::recoverySaved)
+                Phase.LoggedIn -> MainFlow(vm, ui)
+            }
+            SnackbarHost(
+                snackbar,
+                Modifier
+                    .align(Alignment.BottomCenter)
+                    .navigationBarsPadding()
+                    .imePadding(),
+            )
         }
-        SnackbarHost(
-            snackbar,
-            Modifier
-                .align(Alignment.BottomCenter)
-                .navigationBarsPadding()
-                .imePadding(),
-        )
     }
 
     val invite = ui.pendingInvite

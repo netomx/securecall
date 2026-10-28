@@ -262,6 +262,7 @@ fun RecoveryCodeScreen(code: String, onDone: () -> Unit) {
             horizontalArrangement = Arrangement.Start,
         ) {
             Checkbox(checked = saved, onCheckedChange = null)
+            Spacer(Modifier.size(12.dp))
             Text(stringResource(R.string.recovery_saved_check))
         }
         Spacer(Modifier.height(12.dp))
