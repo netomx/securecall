@@ -47,6 +47,12 @@ configure<com.android.build.api.dsl.ApplicationExtension> {
         }
     }
 
+    // Compressed native libraries (WebRTC is most of the APK): a much smaller file to send to a phone,
+    // extracted once at install.
+    packaging {
+        jniLibs.useLegacyPackaging = true
+    }
+
     buildFeatures {
         compose = true
         resValues = true
