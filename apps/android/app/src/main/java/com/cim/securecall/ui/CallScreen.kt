@@ -44,6 +44,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -100,7 +102,15 @@ fun CallScreen(
             Spacer(Modifier.height(20.dp))
             Text(peerName, color = Color.White, style = MaterialTheme.typography.headlineMedium, textAlign = TextAlign.Center)
             Spacer(Modifier.height(8.dp))
-            Text(statusText(call), color = Color.White.copy(alpha = 0.75f), style = MaterialTheme.typography.titleMedium)
+            Text(
+                statusText(call),
+                color = if (call.reconnecting) Color(0xFFFBBF24) else Color.White.copy(alpha = 0.75f),
+                style = MaterialTheme.typography.titleMedium,
+            )
+            if (call.phase == CallPhase.Active && !call.reconnecting && call.rttMs != null) {
+                Spacer(Modifier.height(12.dp))
+                QualityChip(call.rttMs)
+            }
             if (call.code != null && call.phase != CallPhase.Ended) {
                 Spacer(Modifier.height(24.dp))
                 Text(
@@ -164,7 +174,7 @@ private fun statusText(call: CallUi): String {
         CallPhase.Calling -> stringResource(R.string.call_calling)
         CallPhase.Incoming -> stringResource(R.string.call_incoming)
         CallPhase.Connecting -> stringResource(R.string.call_connecting)
-        CallPhase.Active -> {
+        CallPhase.Active -> if (call.reconnecting) stringResource(R.string.call_reconnecting) else {
             val secs = ((now - (call.connectedAt ?: now)) / 1000).coerceAtLeast(0)
             "%d:%02d".format(secs / 60, secs % 60)
         }
@@ -182,6 +192,30 @@ private fun statusText(call: CallUi): String {
                 else -> R.string.call_ended
             }
         )
+    }
+}
+
+/** Round trip of the audio: what the delay in the conversation feels like. */
+@Composable
+private fun QualityChip(rttMs: Int) {
+    val (color, label) = when {
+        rttMs < 150 -> Color(0xFF22C55E) to R.string.quality_excellent
+        rttMs < 300 -> Color(0xFF84CC16) to R.string.quality_good
+        rttMs < 500 -> Color(0xFFF59E0B) to R.string.quality_fair
+        else -> Color(0xFFEF4444) to R.string.quality_poor
+    }
+    val text = stringResource(R.string.call_quality, stringResource(label), rttMs)
+    Row(
+        Modifier
+            .clip(CircleShape)
+            .background(Color.Black.copy(alpha = 0.25f))
+            .semantics(mergeDescendants = true) { contentDescription = text }
+            .padding(horizontal = 12.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(Modifier.size(10.dp).clip(CircleShape).background(color))
+        Spacer(Modifier.width(8.dp))
+        Text(text, color = color, style = MaterialTheme.typography.labelLarge)
     }
 }
 

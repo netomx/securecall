@@ -109,6 +109,8 @@ data class CallUi(
     val endReason: String? = null,
     val verified: Boolean = false,     // the contact was verified in person (QR)
     val code: String? = null,          // comparison code from the handshake, same on both phones
+    val reconnecting: Boolean = false, // the connection dropped mid-call; it ends if not back in a few seconds
+    val rttMs: Int? = null,            // round trip of the audio, for the quality indicator
 )
 
 class AppController(private val app: Application) {
@@ -137,6 +139,14 @@ class AppController(private val app: Application) {
     private val iceOut = ArrayList<String>()        // our candidates waiting for iceReady
     private var ringSeenAt = 0L                     // last time the server (re)delivered the ringing call
     private var ringTimeout: Job? = null
+    // An answered call survives a few seconds without connection: ours, the other phone's, or the audio path.
+    private var selfAway = false
+    private var peerAway = false
+    private var mediaDown = false
+    private var reconnectLimit: Job? = null
+    private var mediaRestart: Job? = null
+    private var statsJob: Job? = null
+    private var lastNetwork: Network? = null
 
     init {
         scope.launch {
@@ -145,7 +155,14 @@ class AppController(private val app: Application) {
                     authenticated = false
                     // A ringing call survives on the server and is delivered again once we reconnect,
                     // so it keeps ringing here; afterAuth() notices if it ended meanwhile.
-                    _call.value?.let { if (it.phase != CallPhase.Incoming && it.phase != CallPhase.Ended) finishCall("disconnected") }
+                    _call.value?.let {
+                        when (it.phase) {
+                            CallPhase.Incoming, CallPhase.Ended -> Unit
+                            // The server keeps an answered call a few seconds for us (call_resumed once back).
+                            CallPhase.Active -> { selfAway = true; updateReconnecting() }
+                            else -> finishCall("disconnected")
+                        }
+                    }
                 }
                 _ui.update { it.copy(conn = s) }
             }
@@ -157,11 +174,22 @@ class AppController(private val app: Application) {
             }
         }
 
-        // A network coming back is the best moment to reconnect: don't wait out the backoff.
+        // A network coming back is the best moment to reconnect: don't wait out the backoff. A different
+        // network (Wi-Fi to mobile data...) leaves our socket on the old one, dead: reconnect right away
+        // instead of waiting for the keepalive to notice.
         app.getSystemService(ConnectivityManager::class.java).registerDefaultNetworkCallback(
             object : ConnectivityManager.NetworkCallback() {
                 override fun onAvailable(network: Network) {
-                    scope.launch { reconnectNow() }
+                    scope.launch {
+                        val changed = lastNetwork != null && lastNetwork != network
+                        lastNetwork = network
+                        if (changed && store.token != null && server.state.value != ConnState.Disconnected) {
+                            server.disconnect()
+                            keepSession()
+                        } else {
+                            reconnectNow()
+                        }
+                    }
                 }
             }
         )
@@ -194,6 +222,8 @@ class AppController(private val app: Application) {
                     // The server re-sends a call that is still ringing right after auth: no re-send means it ended
                     // while we were offline (most likely the caller gave up).
                     _call.value?.let { if (it.phase == CallPhase.Incoming && ringSeenAt < authAt) finishCall("hangup") }
+                    // Likewise an answered call that did not wait for us: no call_resumed means it is over.
+                    if (selfAway) finishCall("disconnected")
                     backoff = 500L
                     server.state.first { it == ConnState.Disconnected }
                 } catch (e: CancellationException) {
@@ -299,6 +329,17 @@ class AppController(private val app: Application) {
             "call_answered" -> onCallAnswered(ev)
             "call_ice" -> onRemoteIce(ev)
             "call_ended" -> if (ev.str("call_id") == _call.value?.callId) finishCall(ev.str("reason"))
+            "call_reconnecting" -> if (ev.str("call_id") == _call.value?.callId) {
+                peerAway = true
+                updateReconnecting()
+            }
+            "call_resumed" -> if (ev.str("call_id") == _call.value?.callId) {
+                selfAway = false
+                peerAway = false
+                updateReconnecting()
+                // One of us is probably on a new network: rebuild the audio path (only the caller offers, so no glare).
+                if (_call.value?.outgoing == true) restartMedia()
+            }
             else -> scope.launch {
                 when (ev.str("ev")) {
                     "friend_request" -> notice(Notice.Info(R.string.notice_friend_request))
@@ -553,10 +594,39 @@ class AppController(private val app: Application) {
         override fun onConnected() {
             tones.stop()
             _call.update { c -> c?.copy(phase = CallPhase.Active, connectedAt = c.connectedAt ?: SystemClock.elapsedRealtime()) }
+            mediaDown = false
+            updateReconnecting()
+            if (statsJob == null) statsJob = scope.launch {
+                while (true) {
+                    val rtt = runCatching { engine.rttMs() }.getOrNull()
+                    _call.update { it?.copy(rttMs = rtt ?: it.rttMs) }
+                    delay(2_000)
+                }
+            }
+        }
+
+        override fun onDisconnected() {
+            if (_call.value?.phase != CallPhase.Active) return
+            mediaDown = true
+            updateReconnecting()
+            // WebRTC often recovers by itself; if not, the caller rebuilds the path with fresh candidates.
+            if (_call.value?.outgoing == true) {
+                mediaRestart?.cancel()
+                mediaRestart = scope.launch {
+                    delay(2_000)
+                    if (mediaDown && !selfAway && !peerAway) restartMedia()
+                }
+            }
         }
 
         override fun onFailed() {
             val c = _call.value ?: return
+            if (c.phase == CallPhase.Active) {
+                mediaDown = true
+                updateReconnecting()
+                if (c.outgoing && !selfAway && !peerAway) restartMedia()
+                return
+            }
             scope.launch { runCatching { server.call("call_end") { put("call_id", c.callId) } } }
             finishCall("failed")
         }
@@ -582,6 +652,44 @@ class AppController(private val app: Application) {
         val seed = store.identitySeed ?: return null
         val psk = store.verifications()[friendId]?.takeIf { it.ik == pinned }?.psk?.let(::b64urlDecode)
         return E2E(seed, b64urlDecode(pinned) ?: return null, psk)
+    }
+
+    /** Shows "reconnecting" while something is down, and ends the call if it is not back in time. */
+    private fun updateReconnecting() {
+        val c = _call.value ?: return
+        val down = c.phase == CallPhase.Active && (selfAway || peerAway || mediaDown)
+        if (c.reconnecting != down) _call.value = c.copy(reconnecting = down)
+        if (!down) {
+            reconnectLimit?.cancel()
+            reconnectLimit = null
+        } else if (reconnectLimit == null) {
+            reconnectLimit = scope.launch {
+                delay(RECONNECT_LIMIT_MS)
+                reconnectLimit = null
+                val now = _call.value ?: return@launch
+                if (now.callId != c.callId || !now.reconnecting) return@launch
+                scope.launch { runCatching { server.call("call_end") { put("call_id", now.callId) } } }
+                finishCall("disconnected")
+            }
+        }
+    }
+
+    /** Caller only: ICE restart, the new offer sent over the call's encrypted channel. */
+    private fun restartMedia() {
+        val c = _call.value ?: return
+        mediaRestart?.cancel()
+        mediaRestart = scope.launch {
+            runCatching {
+                val sdp = engine.restartOffer()
+                sendSecure(c.callId, buildJsonObject { put("restart", "offer"); put("sdp", sdp) }.toString())
+            }
+        }
+    }
+
+    private suspend fun sendSecure(callId: String, plain: String) {
+        val t = transport ?: return
+        val msg = b64url(t.encrypt(plain.encodeToByteArray()))
+        server.call("call_ice") { put("call_id", callId); put("msg", msg) }
     }
 
     /** Sends our ICE candidates, encrypted, once the handshake allows it. */
@@ -763,6 +871,18 @@ class AppController(private val app: Application) {
         val t = transport ?: return
         val o = runCatching { Json.parseToJsonElement(t.decrypt(b64urlDecode(ev.str("msg")!!)!!).decodeToString()).jsonObject }
             .getOrNull() ?: return
+        when (o.str("restart")) {
+            "offer" -> if (_call.value?.outgoing == false) {
+                val callId = _call.value!!.callId
+                scope.launch {
+                    runCatching {
+                        val answer = engine.acceptOffer(o.str("sdp")!!)
+                        sendSecure(callId, buildJsonObject { put("restart", "answer"); put("sdp", answer) }.toString())
+                    }
+                }
+            }
+            "answer" -> if (_call.value?.outgoing == true) scope.launch { runCatching { engine.setAnswer(o.str("sdp")!!) } }
+        }
         val sdp = o.str("candidate") ?: return
         val index = o["sdpMLineIndex"]?.jsonPrimitive?.intOrNull ?: 0
         engine.addRemoteCandidate(IceCandidate(o.str("sdpMid"), index, sdp))
@@ -795,6 +915,14 @@ class AppController(private val app: Application) {
         iceOut.clear()
         ringTimeout?.cancel()
         if (pushWakeLock.isHeld) pushWakeLock.release()
+        reconnectLimit?.cancel()
+        reconnectLimit = null
+        mediaRestart?.cancel()
+        statsJob?.cancel()
+        statsJob = null
+        selfAway = false
+        peerAway = false
+        mediaDown = false
         tones.stop()
         engine.close()
         audio.stop()
@@ -816,6 +944,7 @@ class AppController(private val app: Application) {
 }
 
 private const val RING_LIMIT_MS = 60_000L
+private const val RECONNECT_LIMIT_MS = 10_000L
 
 private fun JsonObject.str(key: String): String? = this[key]?.let { runCatching { it.jsonPrimitive.contentOrNull }.getOrNull() }
 

@@ -77,7 +77,9 @@ candidatos ICE cifrados (ver ARQUITECTURA §4.4). Solo se puede llamar a amigos.
 
 - `call.msg` = Noise mensaje 1, cuyo contenido es `{"sdp": oferta, "psk": id del PSK o "none"}`.
 - `call_answer.msg` = Noise mensaje 2, con `{"sdp": respuesta}`.
-- `call_ice.msg` = nonce (8 bytes, big-endian) ‖ AES-GCM(`{candidate, sdpMid, sdpMLineIndex}`).
+- `call_ice.msg` = nonce (8 bytes, big-endian) ‖ AES-GCM(`{candidate, sdpMid, sdpMLineIndex}`), o bien
+  `{restart: "offer"|"answer", sdp}` para rehacer la ruta del audio (ICE restart) tras un corte. Solo quien
+  llamó manda `offer`, así nunca se cruzan dos.
 
 | op | Parámetros | Respuesta / errores |
 |---|---|---|
@@ -88,6 +90,8 @@ candidatos ICE cifrados (ver ARQUITECTURA §4.4). Solo se puede llamar a amigos.
 | `call_end` | `call_id` | `{}` (colgar o cancelar) |
 
 Si nadie contesta en 45 s, el servidor termina la llamada (`timeout`). Si uno de los dos se desconecta, el otro recibe `call_ended` con `disconnected`, salvo quien **recibe** una llamada que todavía suena: su teléfono puede estar reconectando o despertando por push, y al autenticarse (`auth`/`login`) recibe otra vez `call_incoming`.
+
+Una llamada **contestada** espera 10 s a quien perdió la conexión: el otro recibe `call_reconnecting`, y si vuelve a autenticarse a tiempo los dos reciben `call_resumed` (quien llamó rehace la ruta del audio). Si no, el otro recibe `call_ended` con `disconnected`. Durante una llamada contestada el servidor manda un ping WebSocket cada 10 s y cierra la conexión tras 20 s sin respuesta; fuera de llamadas no hace ping, para no despertar la radio del teléfono.
 
 Si quien recibe tiene token de push, el servidor le manda un push FCM `{"t":"call"}` (sin más datos) al llamar, esté conectado o no.
 
@@ -108,6 +112,8 @@ Si alguien te bloqueó, `friend_request` responde `pending` igualmente: no se re
 | `call_answered` | `call_id`, `msg` | Contestaron tu llamada |
 | `call_ice` | `call_id`, `msg` | Candidato ICE del otro lado |
 | `call_ended` | `call_id`, `reason`: `hangup`, `rejected`, `timeout`, `disconnected` | La llamada terminó |
+| `call_reconnecting` | `call_id` | El otro perdió la conexión; la llamada lo espera 10 s |
+| `call_resumed` | `call_id` | Quien se había desconectado volvió (lo reciben los dos) |
 
 Los eventos solo llegan a quien está conectado. Al reconectar, el cliente llama `contacts` y compara con su estado local.
 

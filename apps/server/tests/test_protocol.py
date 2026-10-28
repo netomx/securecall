@@ -398,9 +398,21 @@ async def test_push_wake():
     assert (await b3.event("call_incoming"))["call_id"] == cid
     await b3.ok("call_answer", call_id=cid, msg="answer")
     await a.event("call_answered")
-    # Once answered, losing the socket ends it
+    # Once answered, losing the socket gives b a few seconds to come back...
     await b3.close()
-    assert (await a.event("call_ended"))["reason"] == "disconnected"
+    assert (await a.event("call_reconnecting"))["call_id"] == cid
+    await a.ok("call_ice", call_id=cid, msg="lost")  # relayed to nobody, no error
+    b3 = await Client().connect()
+    await b3.ok("auth", token=b.token)
+    assert (await b3.event("call_resumed"))["call_id"] == cid
+    assert (await a.event("call_resumed"))["call_id"] == cid
+    await a.ok("call_ice", call_id=cid, msg="restart")
+    assert (await b3.event("call_ice"))["msg"] == "restart"
+    # ...and ends it if they don't (10 s)
+    await b3.close()
+    await a.event("call_reconnecting")
+    ev = await a.event("call_ended", timeout=13)
+    assert ev["call_id"] == cid and ev["reason"] == "disconnected"
 
     # Logging out clears the push token: offline again
     b4 = await Client().connect()

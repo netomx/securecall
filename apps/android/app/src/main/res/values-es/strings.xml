@@ -131,6 +131,12 @@
     <string name="call_mute">Silenciar</string>
     <string name="call_speaker">Altavoz</string>
     <string name="call_ended">Llamada terminada</string>
+    <string name="call_reconnecting">Reconectando…</string>
+    <string name="call_quality">%1$s · %2$d ms</string>
+    <string name="quality_excellent">Excelente</string>
+    <string name="quality_good">Buena</string>
+    <string name="quality_fair">Regular</string>
+    <string name="quality_poor">Mala</string>
     <string name="call_end_rejected">Rechazada</string>
     <string name="call_end_busy">Ocupado</string>
     <string name="call_end_offline">No está conectado ahora</string>

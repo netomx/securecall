@@ -88,16 +88,20 @@ private:
         std::string caller_uuid;
         std::string offer;    // Noise message 1, delivered again if the callee reconnects while it rings
         std::unique_ptr<boost::asio::steady_timer> ring_timer;
+        int64_t away = 0;     // in an answered call: who lost their connection and has a moment to come back
+        std::unique_ptr<boost::asio::steady_timer> grace_timer;
     };
     // The call `user_id` is in, checked to belong to it; throws not_found otherwise.
     std::shared_ptr<Call> call_for(const Request& r);
     int64_t peer_of(const Call& c, int64_t user_id) const { return c.caller == user_id ? c.callee : c.caller; }
     // Removes the call and sends call_ended to both sides except `skip` (who caused it).
     void end_call(const std::string& call_id, const char* reason, int64_t skip);
-    // Ends the user's call because they went away. With `keep_ringing`, a call ringing for them stays:
-    // the phone may be reconnecting or waking up from a push.
-    void drop_calls(int64_t user_id, bool keep_ringing);
-    // Sends call_incoming again for a call ringing for the user (after they (re)authenticate).
+    // The user went away. With `lost` (their connection dropped, they may come back), a call ringing for
+    // them stays (the phone may be reconnecting or waking up from a push), and an answered call waits
+    // a few seconds for them, telling the other side (call_reconnecting). Otherwise the call ends.
+    void drop_calls(int64_t user_id, bool lost);
+    // After the user (re)authenticates: sends call_incoming again for a call ringing for them, or
+    // resumes an answered call waiting for them (call_resumed to both sides).
     void deliver_ringing(int64_t user_id);
 
     template <class F>
@@ -115,6 +119,7 @@ private:
     void bind(const std::shared_ptr<Session>& s, int64_t user_id);
     void unbind(Session& s);
     void notify(int64_t user_id, const Json& event);
+    void set_in_call(int64_t user_id, bool in_call);
     void notify_friends(int64_t user_id, const Json& event);
     User current_user(const Request& r);
     User other_user(const Request& r);

@@ -33,6 +33,10 @@ public:
     // Close after the queued messages are written.
     void close();
 
+    // During a call, ping the phone every 10 s and drop the connection after 20 s without an answer, so a
+    // phone that lost its network is noticed quickly. Not otherwise: pings would keep its radio awake.
+    void set_in_call(bool in_call);
+
     bool is_open() const { return !closing_ && !closed_; }
     const std::string& ip() const { return ip_; }
 

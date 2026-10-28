@@ -36,6 +36,16 @@ void Session::on_request(beast::error_code ec, std::size_t) {
     ws_.async_accept(req_, beast::bind_front_handler(&Session::on_accept, shared_from_this()));
 }
 
+void Session::set_in_call(bool in_call) {
+    if (closed_) return;
+    auto timeouts = websocket::stream_base::timeout::suggested(beast::role_type::server);
+    if (in_call) {
+        timeouts.idle_timeout = std::chrono::seconds(20);
+        timeouts.keep_alive_pings = true;
+    }
+    ws_.set_option(timeouts);
+}
+
 void Session::on_accept(beast::error_code ec) {
     if (ec) return finish();
     buffer_.consume(buffer_.size());

@@ -14,6 +14,7 @@ import org.webrtc.MediaConstraints
 import org.webrtc.MediaStream
 import org.webrtc.PeerConnection
 import org.webrtc.PeerConnectionFactory
+import org.webrtc.RTCStatsReport
 import org.webrtc.SdpObserver
 import org.webrtc.SessionDescription
 import org.webrtc.audio.JavaAudioDeviceModule
@@ -33,6 +34,7 @@ class CallEngine(private val context: Context, private val scope: CoroutineScope
     interface Listener {
         fun onIceCandidate(candidate: IceCandidate)
         fun onConnected()
+        fun onDisconnected()  // audio interrupted; WebRTC may still recover on its own
         fun onFailed()
     }
 
@@ -87,6 +89,25 @@ class CallEngine(private val context: Context, private val scope: CoroutineScope
         return answer.description
     }
 
+    /** New offer that gathers fresh network paths (after a network change). */
+    suspend fun restartOffer(): String {
+        val conn = pc ?: error("no connection")
+        conn.restartIce()
+        return createOffer()
+    }
+
+    /** Round-trip time of the audio path in milliseconds, null before it is known. */
+    suspend fun rttMs(): Int? {
+        val conn = pc ?: return null
+        val report = suspendCancellableCoroutine<RTCStatsReport> { cont -> conn.getStats { cont.resume(it) } }
+        val stats = report.statsMap.values
+        val pairId = stats.firstOrNull { it.type == "transport" }?.members?.get("selectedCandidatePairId") as? String
+        val pair = stats.firstOrNull { it.id == pairId }
+            ?: stats.firstOrNull { it.type == "candidate-pair" && it.members["nominated"] == true && it.members["state"] == "succeeded" }
+        val rtt = pair?.members?.get("currentRoundTripTime") as? Double ?: return null
+        return (rtt * 1000).toInt()
+    }
+
     suspend fun setAnswer(answerSdp: String) {
         val conn = pc ?: error("no connection")
         conn.setDescription(local = false, SessionDescription(SessionDescription.Type.ANSWER, answerSdp))
@@ -129,6 +150,7 @@ class CallEngine(private val context: Context, private val scope: CoroutineScope
             scope.launch {
                 when (newState) {
                     PeerConnection.PeerConnectionState.CONNECTED -> listener.onConnected()
+                    PeerConnection.PeerConnectionState.DISCONNECTED -> listener.onDisconnected()
                     PeerConnection.PeerConnectionState.FAILED -> listener.onFailed()
                     else -> Unit
                 }

@@ -244,6 +244,12 @@ void App::notify(int64_t user_id, const Json& ev) {
     if (auto s = it->second.lock()) s->send(dump(ev));
 }
 
+void App::set_in_call(int64_t user_id, bool in_call) {
+    auto it = online_.find(user_id);
+    if (it == online_.end()) return;
+    if (auto s = it->second.lock()) s->set_in_call(in_call);
+}
+
 void App::notify_friends(int64_t user_id, const Json& ev) {
     for (auto id : store_.friend_ids(user_id)) notify(id, ev);
 }
@@ -583,6 +589,7 @@ namespace {
 constexpr std::size_t kMaxHandshake = 14 * 1024;
 constexpr std::size_t kMaxIce = 3 * 1024;
 constexpr auto kRingTimeout = std::chrono::seconds(45);
+constexpr auto kReconnectGrace = std::chrono::seconds(10);
 }  // namespace
 
 std::shared_ptr<App::Call> App::call_for(const Request& r) {
@@ -601,19 +608,35 @@ void App::end_call(const std::string& call_id, const char* reason, int64_t skip)
     spdlog::info("call ended: {} ({}, by {})", reason, call->active ? "answered" : "ringing",
                  skip == call->caller ? "caller" : skip == call->callee ? "callee" : "server");
     if (call->ring_timer) call->ring_timer->cancel();
+    if (call->grace_timer) call->grace_timer->cancel();
     for (auto uid : {call->caller, call->callee}) {
         if (auto u = user_call_.find(uid); u != user_call_.end() && u->second == call_id) user_call_.erase(u);
         if (uid != skip) notify(uid, event("call_ended", {{"call_id", call_id}, {"reason", reason}}));
+        if (call->active) set_in_call(uid, false);
     }
 }
 
-void App::drop_calls(int64_t user_id, bool keep_ringing) {
+void App::drop_calls(int64_t user_id, bool lost) {
     auto it = user_call_.find(user_id);
     if (it == user_call_.end()) return;
     auto id = it->second;
-    if (keep_ringing) {
-        auto c = calls_.find(id);
-        if (c != calls_.end() && c->second->callee == user_id && !c->second->active) return;
+    auto c = calls_.find(id);
+    if (lost && c != calls_.end()) {
+        auto& call = *c->second;
+        if (!call.active && call.callee == user_id) return;
+        if (call.active && (call.away == 0 || call.away == user_id)) {
+            if (call.away == user_id) return;  // already waiting for them
+            call.away = user_id;
+            call.grace_timer = std::make_unique<asio::steady_timer>(ioc_, kReconnectGrace);
+            call.grace_timer->async_wait([this, id](const boost::system::error_code& ec) {
+                if (ec) return;
+                auto it = calls_.find(id);
+                if (it != calls_.end() && it->second->away) end_call(id, "disconnected", it->second->away);
+            });
+            notify(peer_of(call, user_id), event("call_reconnecting", {{"call_id", id}}));
+            spdlog::info("call waiting for a participant to reconnect");
+            return;
+        }
     }
     end_call(id, "disconnected", user_id);
 }
@@ -622,7 +645,18 @@ void App::deliver_ringing(int64_t user_id) {
     auto it = user_call_.find(user_id);
     if (it == user_call_.end()) return;
     auto c = calls_.find(it->second);
-    if (c == calls_.end() || c->second->callee != user_id || c->second->active) return;
+    if (c == calls_.end()) return;
+    if (c->second->active) {
+        auto& call = *c->second;
+        if (call.away != user_id) return;
+        call.away = 0;
+        call.grace_timer->cancel();
+        spdlog::info("call resumed after reconnecting");
+        set_in_call(user_id, true);
+        for (auto uid : {call.caller, call.callee}) notify(uid, event("call_resumed", {{"call_id", call.id}}));
+        return;
+    }
+    if (c->second->callee != user_id) return;
     const auto& call = *c->second;
     spdlog::info("call re-delivered to the callee after reconnecting");
     notify(user_id, event("call_incoming", {{"call_id", call.id}, {"user_id", call.caller_uuid}, {"msg", call.offer}}));
@@ -671,6 +705,8 @@ void App::op_call_answer(Request r) {
     if (call->callee != *r.session->user_id || call->active) throw ApiError("bad_request");
     call->active = true;
     call->ring_timer->cancel();
+    set_in_call(call->caller, true);
+    set_in_call(call->callee, true);
     notify(call->caller, event("call_answered", {{"call_id", call->id}, {"msg", msg}}));
     reply(r);
 }
