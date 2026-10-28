@@ -40,6 +40,7 @@ sealed interface Screen {
     data object AddFriend : Screen
     data object Settings : Screen
     data class Contact(val id: String) : Screen
+    data class Verify(val id: String) : Screen
 }
 
 // Saved as strings so the stack survives the activity being recreated (e.g. after a language change).
@@ -51,6 +52,7 @@ private val StackSaver = listSaver<List<Screen>, String>(
                 Screen.AddFriend -> "add"
                 Screen.Settings -> "settings"
                 is Screen.Contact -> "contact:${it.id}"
+                is Screen.Verify -> "verify:${it.id}"
             }
         }
     },
@@ -60,6 +62,7 @@ private val StackSaver = listSaver<List<Screen>, String>(
                 it == "add" -> Screen.AddFriend
                 it == "settings" -> Screen.Settings
                 it.startsWith("contact:") -> Screen.Contact(it.removePrefix("contact:"))
+                it.startsWith("verify:") -> Screen.Verify(it.removePrefix("verify:"))
                 else -> Screen.Contacts
             }
         }
@@ -187,9 +190,18 @@ private fun MainFlow(vm: AppController, ui: UiState, onCall: (String) -> Unit) {
                     onCall = { onCall(friend.id) },
                     onAlias = { vm.setAlias(friend.id, it) },
                     onTrustKey = { vm.trustKey(friend.id) },
+                    onVerify = { push(Screen.Verify(friend.id)) },
                     onRemove = { vm.removeFriend(friend.id) },
                     onBlock = { vm.block(friend.id) },
                 )
+            }
+        }
+        is Screen.Verify -> {
+            val friend = ui.friends.find { it.id == top.id }
+            if (friend == null || friend.keyChanged) {
+                LaunchedEffect(top.id) { pop() }
+            } else {
+                VerifyScreen(vm, friend, onBack = pop)
             }
         }
     }

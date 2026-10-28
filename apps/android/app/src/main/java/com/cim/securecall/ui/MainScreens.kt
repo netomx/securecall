@@ -39,10 +39,13 @@ import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Password
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.PersonRemove
+import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -93,7 +96,7 @@ import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
 
 @Composable
-private fun BackTopBar(title: String, onBack: () -> Unit) {
+internal fun BackTopBar(title: String, onBack: () -> Unit) {
     TopAppBar(
         title = { Text(title) },
         navigationIcon = {
@@ -209,6 +212,7 @@ fun ContactsScreen(
                         supportingContent = {
                             when {
                                 f.keyChanged -> Text(stringResource(R.string.key_changed_short), color = MaterialTheme.colorScheme.error)
+                                f.verified -> Text("✓ " + stringResource(R.string.verified), color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.bodySmall)
                                 f.fingerprint != null -> Text(f.fingerprint.take(19), fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall)
                                 else -> Text(stringResource(R.string.no_key), style = MaterialTheme.typography.bodySmall)
                             }
@@ -333,6 +337,7 @@ fun ContactScreen(
     onCall: () -> Unit,
     onAlias: (String) -> Unit,
     onTrustKey: () -> Unit,
+    onVerify: () -> Unit,
     onRemove: () -> Unit,
     onBlock: () -> Unit,
 ) {
@@ -393,6 +398,26 @@ fun ContactScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(16.dp),
             )
+
+            SectionTitle(stringResource(R.string.verify_title))
+            Row(Modifier.padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    if (friend.verified) Icons.Default.VerifiedUser else Icons.Default.Shield,
+                    null,
+                    tint = if (friend.verified) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.size(12.dp))
+                Text(stringResource(if (friend.verified) R.string.verify_status_yes else R.string.verify_status_no), style = MaterialTheme.typography.bodyMedium)
+            }
+            OutlinedButton(
+                onClick = onVerify,
+                enabled = !friend.keyChanged && friend.pinned != null,
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
+            ) {
+                Icon(Icons.Default.QrCode, null, Modifier.size(18.dp))
+                Spacer(Modifier.size(8.dp))
+                Text(stringResource(R.string.verify_button))
+            }
 
             HorizontalDivider(Modifier.padding(vertical = 8.dp))
             TextButton(onClick = { confirmRemove = true }) {

@@ -43,3 +43,4 @@ Thumbs.db
 
 # Built APKs to share
 dist/
+__pycache__/

@@ -84,7 +84,11 @@ fun CallScreen(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Default.Lock, null, tint = Color(0xFF5EEAD4), modifier = Modifier.size(14.dp))
                 Spacer(Modifier.width(6.dp))
-                Text(stringResource(R.string.call_encrypted), color = Color(0xFF5EEAD4), style = MaterialTheme.typography.labelLarge)
+                Text(
+                    stringResource(if (call.verified) R.string.call_encrypted_verified else R.string.call_encrypted),
+                    color = Color(0xFF5EEAD4),
+                    style = MaterialTheme.typography.labelLarge,
+                )
             }
             Spacer(Modifier.height(40.dp))
             Box(
@@ -97,6 +101,14 @@ fun CallScreen(
             Text(peerName, color = Color.White, style = MaterialTheme.typography.headlineMedium, textAlign = TextAlign.Center)
             Spacer(Modifier.height(8.dp))
             Text(statusText(call), color = Color.White.copy(alpha = 0.75f), style = MaterialTheme.typography.titleMedium)
+            if (call.code != null && call.phase != CallPhase.Ended) {
+                Spacer(Modifier.height(24.dp))
+                Text(
+                    stringResource(R.string.call_code, call.code),
+                    color = Color.White.copy(alpha = 0.6f),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            }
         }
 
         Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(bottom = 24.dp)) {
@@ -164,6 +176,7 @@ private fun statusText(call: CallUi): String {
                 "timeout" -> R.string.call_end_timeout
                 "disconnected" -> R.string.call_end_disconnected
                 "failed" -> R.string.call_end_failed
+                "e2e_failed" -> R.string.call_end_e2e
                 "network" -> R.string.err_network
                 "in_call" -> R.string.call_end_in_call
                 else -> R.string.call_ended

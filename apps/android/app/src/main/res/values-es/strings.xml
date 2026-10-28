@@ -60,7 +60,7 @@
     <string name="save">Guardar</string>
     <string name="user_id">ID</string>
     <string name="fingerprint">Huella de la llave</string>
-    <string name="fingerprint_hint">Compárala en persona con tu amigo. La verificación escaneando un QR llega en la fase 4.</string>
+    <string name="fingerprint_hint">Compárala en persona con tu amigo o, mejor, verifiquen sus QR abajo.</string>
     <string name="key_changed_title">La llave de este contacto cambió</string>
     <string name="key_changed_body">Puede ser un teléfono nuevo o alguien intentando interceptarte. Confírmalo con tu amigo antes de confiar en ella.</string>
     <string name="trust_key">Confiar en la nueva llave</string>
@@ -118,7 +118,7 @@
     <string name="err_mismatch">Las contraseñas no coinciden</string>
     <string name="err_generic">Algo salió mal</string>
     <!-- Calls -->
-    <string name="call_encrypted">Llamada cifrada</string>
+    <string name="call_encrypted">Cifrada de extremo a extremo</string>
     <string name="call_calling">Llamando…</string>
     <string name="call_incoming">Llamada entrante</string>
     <string name="call_connecting">Conectando…</string>
@@ -140,4 +140,28 @@
     <string name="notif_channel_ongoing">Llamada en curso</string>
     <string name="notif_incoming_text">%1$s te está llamando</string>
     <string name="notif_ongoing_text">Llamada con %1$s</string>
+    <string name="call_encrypted_verified">Cifrada de extremo a extremo · verificada</string>
+    <string name="call_code">Código de seguridad: %1$s</string>
+    <string name="call_end_e2e">No se pudo verificar la llamada (las llaves no coinciden)</string>
+    <string name="verified">Verificado</string>
+    <string name="verify_title">Verificar en persona</string>
+    <string name="verify_status_no">Sin verificar: las llamadas usan la llave recibida automáticamente.</string>
+    <string name="verify_status_yes">Verificado en persona. Las llamadas usan además una llave que solo conocen sus dos teléfonos.</string>
+    <string name="verify_button">Verificar con QR</string>
+    <string name="verify_step1">1. Que %1$s escanee este código con su Kalloq (Contactos → %2$s → Verificar con QR).</string>
+    <string name="verify_step2">2. Escanea el código en el teléfono de %1$s.</string>
+    <string name="verify_scan">Escanear su código</string>
+    <string name="verify_scan_prompt">Apunta al QR de verificación en el teléfono de tu amigo</string>
+    <string name="verify_code_label">Los dos teléfonos deben mostrar este código:</string>
+    <string name="verify_code_hint">Si es distinto, alguno escaneó un código viejo: toquen Empezar de nuevo en ambos teléfonos.</string>
+    <string name="verify_reset">Empezar de nuevo</string>
+    <string name="verify_remove">Quitar verificación</string>
+    <string name="verify_qr_secret">Muestra este código solo en persona: no envíes una foto de él.</string>
+    <string name="verify_done">Código escaneado. Comprueben que los dos teléfonos muestran el mismo código.</string>
+    <string name="err_verify_invalid">Ese no es un código de verificación de Kalloq</string>
+    <string name="err_verify_other">Ese código es de otro contacto</string>
+    <string name="err_verify_key">La llave de ese código no coincide con la que tienes para este contacto</string>
+    <string name="err_key_changed">La llave de este contacto cambió o falta. Revisa su ficha antes de llamar.</string>
+    <string name="err_e2e_failed">Se rechazó una llamada que no se pudo verificar</string>
+    <string name="err_verify_mismatch">Falló una llamada porque su verificación por QR con ese contacto no coincide. Verifiquen de nuevo.</string>
 </resources>

@@ -21,7 +21,7 @@ WebSocket sobre TLS: `wss://call.l8.nz/ws`. Cada mensaje es un objeto JSON en un
 {"ev": "friend_request", "user_id": "…"}
 ```
 
-Al conectar, el servidor envía `{"ev":"hello","v":1,"server":"sc-server/<versión>"}`.
+Al conectar, el servidor envía `{"ev":"hello","v":2,"server":"sc-server/<versión>"}`.
 
 ## Codificaciones
 
@@ -71,18 +71,22 @@ Al conectar, el servidor envía `{"ev":"hello","v":1,"server":"sc-server/<versi�
 
 ### Llamadas
 
-El servidor solo reenvía; no interpreta el SDP ni los candidatos ICE. Solo se puede llamar a amigos.
+El servidor solo reenvía `msg`, que es opaco para él (base64url): los mensajes Noise del handshake y los
+candidatos ICE cifrados (ver ARQUITECTURA §4.4). Solo se puede llamar a amigos.
+
+- `call.msg` = Noise mensaje 1, cuyo contenido es `{"sdp": oferta, "psk": id del PSK o "none"}`.
+- `call_answer.msg` = Noise mensaje 2, con `{"sdp": respuesta}`.
+- `call_ice.msg` = nonce (8 bytes, big-endian) ‖ AES-GCM(`{candidate, sdpMid, sdpMLineIndex}`).
 
 | op | Parámetros | Respuesta / errores |
 |---|---|---|
-| `call` | `user_id`, `call_id` (UUIDv4 elegido por quien llama), `sdp` (oferta, máx. 12 KiB) | `{}` · `offline`, `busy` (el otro está en otra llamada), `in_call` (tú ya estás en una), `not_found` |
-| `call_answer` | `call_id`, `sdp` (respuesta) | `{}` (solo quien recibe la llamada) |
-| `call_ice` | `call_id`, `candidate` (`{candidate, sdpMid, sdpMLineIndex}`, máx. 2 KiB) | `{}` |
+| `call` | `user_id`, `call_id` (UUIDv4 elegido por quien llama), `msg` (máx. 14 KiB) | `{}` · `offline`, `busy` (el otro está en otra llamada), `in_call` (tú ya estás en una), `not_found` |
+| `call_answer` | `call_id`, `msg` (máx. 14 KiB) | `{}` (solo quien recibe la llamada) |
+| `call_ice` | `call_id`, `msg` (máx. 3 KiB) | `{}` |
 | `call_reject` | `call_id` | `{}` (solo mientras suena) |
 | `call_end` | `call_id` | `{}` (colgar o cancelar) |
 
 Si nadie contesta en 45 s, el servidor termina la llamada (`timeout`). Si uno de los dos se desconecta, el otro recibe `call_ended` con `disconnected`.
-En la fase 4 el SDP irá cifrado de extremo a extremo; hoy viaja dentro del TLS hacia el servidor.
 
 Si alguien te bloqueó, `friend_request` responde `pending` igualmente: no se revela el bloqueo.
 
@@ -97,9 +101,9 @@ Si alguien te bloqueó, `friend_request` responde `pending` igualmente: no se re
 | `friend_removed` | `user_id` | Un amigo te eliminó, canceló su solicitud o borró su cuenta |
 | `key_changed` | `user_id`, `ik`, `key_version` | Un amigo cambió su llave de identidad: **la app debe avisar al usuario** |
 | `friend_id_changed` | `old_id`, `new_id` | Un amigo regeneró su UUID |
-| `call_incoming` | `call_id`, `user_id`, `sdp` | Te están llamando |
-| `call_answered` | `call_id`, `sdp` | Contestaron tu llamada |
-| `call_ice` | `call_id`, `candidate` | Candidato ICE del otro lado |
+| `call_incoming` | `call_id`, `user_id`, `msg` | Te están llamando |
+| `call_answered` | `call_id`, `msg` | Contestaron tu llamada |
+| `call_ice` | `call_id`, `msg` | Candidato ICE del otro lado |
 | `call_ended` | `call_id`, `reason`: `hangup`, `rejected`, `timeout`, `disconnected` | La llamada terminó |
 
 Los eventos solo llegan a quien está conectado. Al reconectar, el cliente llama `contacts` y compara con su estado local.

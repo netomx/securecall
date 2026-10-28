@@ -13,6 +13,11 @@ Kotlin + Jetpack Compose, minSdk 26, paquete `com.cim.securecall`.
 | `data/LocalStore.kt` | Token de sesión y semilla de identidad cifrados con AES-256-GCM (llave en Android Keystore); alias y llaves fijadas |
 | `data/Identity.kt` | Llave de identidad Ed25519 (Tink), huella, parseo de IDs e invitaciones |
 | `AppController.kt` | Vive con el proceso (no con la pantalla): sesión, reconexión con backoff, eventos, amigos, TOFU de llaves y el flujo de llamada |
+| `crypto/Noise.kt` | `Noise_KKpsk2_25519_AESGCM_SHA256` y transporte con nonce explícito |
+| `crypto/Keys.kt` | Ed25519 → X25519, HKDF, HMAC |
+| `crypto/CallCrypto.kt` | Handshake por llamada, id del PSK, código de seguridad |
+| `crypto/Verification.kt` | QR de verificación en persona y PSK del par |
+| `ui/VerifyScreen.kt` | Verificar en persona: mostrar y escanear QR, código a comparar |
 | `call/CallEngine.kt` | WebRTC solo audio (Opus, DTLS-SRTP), ICE por goteo, cola de candidatos remotos |
 | `call/AudioRouter.kt` | Modo comunicación, foco de audio, auricular / altavoz / Bluetooth (cambia solo al conectar o desconectar el audífono), sensor de proximidad |
 | `call/CallService.kt` | Servicio en primer plano tipo micrófono y notificaciones de llamada entrante / en curso |

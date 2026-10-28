@@ -61,7 +61,7 @@
     <string name="save">Save</string>
     <string name="user_id">ID</string>
     <string name="fingerprint">Key fingerprint</string>
-    <string name="fingerprint_hint">Compare it with your friend in person. Verification by scanning a QR comes in phase 4.</string>
+    <string name="fingerprint_hint">Compare it with your friend in person, or better, verify each other\'s QR below.</string>
     <string name="key_changed_title">This contact\'s key changed</string>
     <string name="key_changed_body">It may be a new phone, or someone trying to intercept you. Confirm with your friend before trusting it.</string>
     <string name="trust_key">Trust new key</string>
@@ -121,7 +121,7 @@
     <string name="err_mismatch">Passwords don\'t match</string>
     <string name="err_generic">Something went wrong</string>
     <!-- Calls -->
-    <string name="call_encrypted">Encrypted call</string>
+    <string name="call_encrypted">End-to-end encrypted</string>
     <string name="call_calling">Calling…</string>
     <string name="call_incoming">Incoming call</string>
     <string name="call_connecting">Connecting…</string>
@@ -144,4 +144,28 @@
     <string name="notif_channel_ongoing">Ongoing call</string>
     <string name="notif_incoming_text">%1$s is calling</string>
     <string name="notif_ongoing_text">Call with %1$s</string>
+    <string name="call_encrypted_verified">End-to-end encrypted · verified</string>
+    <string name="call_code">Security code: %1$s</string>
+    <string name="call_end_e2e">Could not verify the call (keys do not match)</string>
+    <string name="verified">Verified</string>
+    <string name="verify_title">Verify in person</string>
+    <string name="verify_status_no">Not verified: calls use the key received automatically.</string>
+    <string name="verify_status_yes">Verified in person. Calls also use a key that only your two phones know.</string>
+    <string name="verify_button">Verify with QR</string>
+    <string name="verify_step1">1. Let %1$s scan this code with their Kalloq (Contacts → %2$s → Verify with QR).</string>
+    <string name="verify_step2">2. Scan the code on %1$s\'s phone.</string>
+    <string name="verify_scan">Scan their code</string>
+    <string name="verify_scan_prompt">Point at the verification QR on your friend\'s phone</string>
+    <string name="verify_code_label">Both phones must show this code:</string>
+    <string name="verify_code_hint">If it is different, one of you scanned an old code: tap Start again on both phones.</string>
+    <string name="verify_reset">Start again</string>
+    <string name="verify_remove">Remove verification</string>
+    <string name="verify_qr_secret">Show this code only in person: do not send a photo of it.</string>
+    <string name="verify_done">Code scanned. Check that both phones show the same code.</string>
+    <string name="err_verify_invalid">That is not a Kalloq verification code</string>
+    <string name="err_verify_other">That code belongs to another contact</string>
+    <string name="err_verify_key">The key in that code does not match the one you have for this contact</string>
+    <string name="err_key_changed">This contact\'s key changed or is missing. Check their card before calling.</string>
+    <string name="err_e2e_failed">Rejected a call that could not be verified</string>
+    <string name="err_verify_mismatch">A call failed because your QR verification with that contact does not match. Verify again.</string>
 </resources>

@@ -9,10 +9,16 @@ import com.cim.securecall.call.CallEngine
 import com.cim.securecall.call.CallNotifications
 import com.cim.securecall.call.CallService
 import com.cim.securecall.call.CallTones
+import com.cim.securecall.crypto.CallCrypto
+import com.cim.securecall.crypto.NoiseHandshake
+import com.cim.securecall.crypto.Transport
+import com.cim.securecall.crypto.Verification
 import com.cim.securecall.data.Identity
 import com.cim.securecall.data.LocalStore
 import com.cim.securecall.data.SERVER_URL
+import com.cim.securecall.data.VerifyRecord
 import com.cim.securecall.data.b64url
+import com.cim.securecall.data.b64urlDecode
 import com.cim.securecall.data.parseFriendId
 import com.cim.securecall.net.ConnState
 import com.cim.securecall.net.ServerClient
@@ -30,6 +36,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.contentOrNull
@@ -60,6 +67,9 @@ data class Friend(
     val ik: String?,
     val fingerprint: String?,
     val keyChanged: Boolean,
+    val pinned: String? = null,        // the identity key we trust for this contact
+    val verified: Boolean = false,     // QR verification done on our side
+    val verifyCode: String? = null,    // shown on both phones after scanning; must match
 ) {
     val displayName: String get() = alias ?: id.take(8)
 }
@@ -90,6 +100,8 @@ data class CallUi(
     val route: AudioRoute = AudioRoute.Earpiece,
     val bluetoothAvailable: Boolean = false,
     val endReason: String? = null,
+    val verified: Boolean = false,     // the contact was verified in person (QR)
+    val code: String? = null,          // comparison code from the handshake, same on both phones
 )
 
 class AppController(private val app: Application) {
@@ -108,7 +120,11 @@ class AppController(private val app: Application) {
     private val tones = CallTones(app)
     private val _call = MutableStateFlow<CallUi?>(null)
     val call: StateFlow<CallUi?> = _call
-    private var pendingOffer: String? = null
+    private var pendingOffer: String? = null   // decrypted SDP offer of a ringing call
+    private var handshake: NoiseHandshake? = null
+    private var transport: Transport? = null
+    private var iceReady = false                    // our candidates can be sent (handshake done, answer out)
+    private val iceOut = ArrayList<String>()        // our candidates waiting for iceReady
 
     init {
         scope.launch {
@@ -235,11 +251,11 @@ class AppController(private val app: Application) {
                 store.setPin(id, ik)  // trust on first use
                 pinned = ik
             }
-            Friend(id, null, ik, ik?.let(Identity::fingerprint), keyChanged = ik != null && pinned != ik)
+            Friend(id, null, ik, ik?.let(Identity::fingerprint), keyChanged = ik != null && pinned != ik, pinned = pinned)
         }
         _ui.update {
             it.copy(
-                friends = withAliases(friends),
+                friends = decorate(friends),
                 incoming = r.strings("incoming"),
                 outgoing = r.strings("outgoing"),
                 blocked = r.strings("blocked"),
@@ -247,10 +263,17 @@ class AppController(private val app: Application) {
         }
     }
 
-    private fun withAliases(friends: List<Friend>): List<Friend> {
+    /** Adds what only this phone knows: aliases and QR verification. */
+    private fun decorate(friends: List<Friend>): List<Friend> {
         val aliases = store.aliases()
-        return friends.map { it.copy(alias = aliases[it.id]) }.sortedBy { it.displayName.lowercase() }
+        val verifications = store.verifications()
+        return friends.map { f ->
+            val psk = verifications[f.id]?.takeIf { it.ik == f.pinned }?.psk?.let(::b64urlDecode)
+            f.copy(alias = aliases[f.id], verified = psk != null, verifyCode = psk?.let(Verification::code))
+        }.sortedBy { it.displayName.lowercase() }
     }
+
+    private fun redecorate() = _ui.update { it.copy(friends = decorate(it.friends)) }
 
     fun displayName(id: String): String = _ui.value.friends.find { it.id == id }?.displayName ?: id.take(8)
 
@@ -373,14 +396,57 @@ class AppController(private val app: Application) {
 
     fun setAlias(id: String, alias: String) {
         store.setAlias(id, alias)
-        _ui.update { it.copy(friends = withAliases(it.friends)) }
+        redecorate()
     }
 
     /** The user confirmed the friend's new key: pin it. */
     fun trustKey(id: String) {
         val friend = _ui.value.friends.find { it.id == id } ?: return
-        friend.ik?.let { store.setPin(id, it) }
-        _ui.update { s -> s.copy(friends = s.friends.map { if (it.id == id) it.copy(keyChanged = false) else it }) }
+        val ik = friend.ik ?: return
+        store.setPin(id, ik)
+        store.updateVerifications { remove(id) }  // the QR verification was for the old key
+        _ui.update { s -> s.copy(friends = decorate(s.friends.map { if (it.id == id) it.copy(keyChanged = false, pinned = ik) else it })) }
+    }
+
+    // ---------------------------------------------------------------- in-person verification
+
+    /** Our QR for verifying [friendId]. Its random value is kept until the verification is reset. */
+    fun verifyQrText(friendId: String): String? {
+        val pinned = store.pins()[friendId] ?: return null
+        val seed = store.identitySeed ?: return null
+        val myId = store.userId ?: return null
+        val rec = store.verifications()[friendId]?.takeIf { it.ik == pinned }
+            ?: VerifyRecord(pinned, b64url(Verification.newRandom())).also { store.updateVerifications { put(friendId, it) } }
+        return Verification.encode(myId, Identity.publicKey(seed), b64urlDecode(rec.rSelf)!!)
+    }
+
+    /** The user scanned [friendId]'s verification QR. */
+    fun scanVerify(friendId: String, text: String) {
+        val friend = _ui.value.friends.find { it.id == friendId } ?: return
+        val code = Verification.decode(text)
+        val seed = store.identitySeed
+        val pinned = friend.pinned?.let(::b64urlDecode)
+        when {
+            code == null || seed == null || pinned == null -> notice(Notice.Error("verify_invalid"))
+            code.userId != friendId -> notice(Notice.Error("verify_other"))
+            friend.keyChanged || !code.ik.contentEquals(pinned) -> notice(Notice.Error("verify_key"))
+            else -> {
+                verifyQrText(friendId)  // makes sure our random value exists
+                store.updateVerifications {
+                    val rec = getValue(friendId)
+                    val psk = Verification.psk(seed, Identity.publicKey(seed), b64urlDecode(rec.rSelf)!!, code.ik, code.r)
+                    put(friendId, rec.copy(rOther = b64url(code.r), psk = b64url(psk)))
+                }
+                redecorate()
+                notice(Notice.Info(R.string.verify_done))
+            }
+        }
+    }
+
+    /** Back to the automatic (TOFU) key; a new QR value is generated next time. */
+    fun resetVerification(friendId: String) {
+        store.updateVerifications { remove(friendId) }
+        redecorate()
     }
 
     fun openInvite(id: String) = _ui.update { it.copy(pendingInvite = id) }
@@ -395,18 +461,16 @@ class AppController(private val app: Application) {
 
     private val engineListener = object : CallEngine.Listener {
         override fun onIceCandidate(candidate: IceCandidate) {
-            val c = _call.value ?: return
+            val callId = _call.value?.callId ?: return
+            val json = buildJsonObject {
+                put("candidate", candidate.sdp)
+                put("sdpMid", candidate.sdpMid)
+                put("sdpMLineIndex", candidate.sdpMLineIndex)
+            }.toString()
             scope.launch {
-                runCatching {
-                    server.call("call_ice") {
-                        put("call_id", c.callId)
-                        put("candidate", buildJsonObject {
-                            put("candidate", candidate.sdp)
-                            put("sdpMid", candidate.sdpMid)
-                            put("sdpMLineIndex", candidate.sdpMLineIndex)
-                        })
-                    }
-                }
+                if (_call.value?.callId != callId) return@launch
+                iceOut += json
+                flushIce()
             }
         }
 
@@ -433,11 +497,34 @@ class AppController(private val app: Application) {
         )
     }
 
+    private class E2E(val seed: ByteArray, val peerIk: ByteArray, val psk: ByteArray?)
+
+    /** Keys for a call with [friendId]: the pinned identity key and the QR PSK if verified. Null if the key changed and was not confirmed. */
+    private fun e2eFor(friendId: String): E2E? {
+        val pinned = store.pins()[friendId] ?: return null
+        if (_ui.value.friends.find { it.id == friendId }?.keyChanged == true) return null
+        val seed = store.identitySeed ?: return null
+        val psk = store.verifications()[friendId]?.takeIf { it.ik == pinned }?.psk?.let(::b64urlDecode)
+        return E2E(seed, b64urlDecode(pinned) ?: return null, psk)
+    }
+
+    /** Sends our ICE candidates, encrypted, once the handshake allows it. */
+    private fun flushIce() {
+        val c = _call.value ?: return
+        val t = transport?.takeIf { iceReady } ?: return
+        for (cand in iceOut) {
+            val msg = b64url(t.encrypt(cand.encodeToByteArray()))
+            scope.launch { runCatching { server.call("call_ice") { put("call_id", c.callId); put("msg", msg) } } }
+        }
+        iceOut.clear()
+    }
+
     /** Requires RECORD_AUDIO (the UI asks for it first). */
     fun startCall(friendId: String) {
         if (_call.value != null) return
+        val e2e = e2eFor(friendId) ?: return notice(Notice.Error("key_changed"))
         val callId = UUID.randomUUID().toString()
-        _call.value = CallUi(callId, friendId, outgoing = true, phase = CallPhase.Calling)
+        _call.value = CallUi(callId, friendId, outgoing = true, phase = CallPhase.Calling, verified = e2e.psk != null)
         CallService.start(app, displayName(friendId))
         audio.start()
         tones.ringback()
@@ -445,10 +532,16 @@ class AppController(private val app: Application) {
             try {
                 engine.open(iceServers(), engineListener)
                 val offer = engine.createOffer()
+                val hs = CallCrypto.handshake(true, e2e.seed, e2e.peerIk, e2e.psk, callId)
+                val payload = buildJsonObject {
+                    put("sdp", offer)
+                    put("psk", CallCrypto.pskId(e2e.psk))
+                }.toString()
+                handshake = hs
                 server.call("call") {
                     put("user_id", friendId)
                     put("call_id", callId)
-                    put("sdp", offer)
+                    put("msg", b64url(hs.writeOffer(payload.encodeToByteArray())))
                 }
             } catch (e: CancellationException) {
                 throw e
@@ -468,8 +561,20 @@ class AppController(private val app: Application) {
             scope.launch { runCatching { server.call("call_reject") { put("call_id", callId) } } }
             return
         }
-        pendingOffer = ev.str("sdp")
-        _call.value = CallUi(callId, from, outgoing = false, phase = CallPhase.Incoming)
+        val reject = { error: String ->
+            scope.launch { runCatching { server.call("call_reject") { put("call_id", callId) } } }
+            notice(Notice.Error(error))
+        }
+        // Only a call made with the identity key we pinned for this friend decrypts.
+        val e2e = e2eFor(from) ?: return reject("key_changed")
+        val hs = CallCrypto.handshake(false, e2e.seed, e2e.peerIk, e2e.psk, callId)
+        val offer = runCatching {
+            Json.parseToJsonElement(hs.readOffer(b64urlDecode(ev.str("msg")!!)!!).decodeToString()).jsonObject
+        }.getOrNull() ?: return reject("e2e_failed")
+        if (offer.str("psk") != CallCrypto.pskId(e2e.psk)) return reject("verify_mismatch")
+        pendingOffer = offer.str("sdp") ?: return reject("e2e_failed")
+        handshake = hs
+        _call.value = CallUi(callId, from, outgoing = false, phase = CallPhase.Incoming, verified = e2e.psk != null)
         tones.ring()
         if (!appVisible) CallNotifications.showIncoming(app, displayName(from))
     }
@@ -499,10 +604,16 @@ class AppController(private val app: Application) {
             try {
                 engine.open(iceServers(), engineListener)
                 val answer = engine.acceptOffer(offer)
+                val hs = handshake ?: error("no handshake")
+                val (msg, t) = hs.writeAnswer(buildJsonObject { put("sdp", answer) }.toString().encodeToByteArray())
+                transport = t
+                _call.update { if (it?.callId == c.callId) it.copy(code = CallCrypto.callCode(hs.handshakeHash)) else it }
                 server.call("call_answer") {
                     put("call_id", c.callId)
-                    put("sdp", answer)
+                    put("msg", b64url(msg))
                 }
+                iceReady = true
+                flushIce()
             } catch (e: CancellationException) {
                 throw e
             } catch (e: ServerError) {
@@ -531,9 +642,23 @@ class AppController(private val app: Application) {
     private fun onCallAnswered(ev: JsonObject) {
         val c = _call.value ?: return
         if (ev.str("call_id") != c.callId || !c.outgoing) return
-        val sdp = ev.str("sdp") ?: return
+        val hs = handshake ?: return
+        // Fails if the answer was not made by the pinned peer or the QR PSKs differ.
+        val opened = runCatching {
+            val (payload, t) = hs.readAnswer(b64urlDecode(ev.str("msg")!!)!!)
+            Json.parseToJsonElement(payload.decodeToString()).jsonObject.str("sdp")!! to t
+        }.getOrNull()
+        if (opened == null) {
+            scope.launch { runCatching { server.call("call_end") { put("call_id", c.callId) } } }
+            finishCall("e2e_failed")
+            return
+        }
+        val (sdp, t) = opened
         tones.stop()
-        _call.value = c.copy(phase = CallPhase.Connecting)
+        transport = t
+        iceReady = true
+        _call.value = c.copy(phase = CallPhase.Connecting, code = CallCrypto.callCode(hs.handshakeHash))
+        flushIce()
         scope.launch {
             runCatching { engine.setAnswer(sdp) }.onFailure { engineListener.onFailed() }
         }
@@ -541,7 +666,9 @@ class AppController(private val app: Application) {
 
     private fun onRemoteIce(ev: JsonObject) {
         if (ev.str("call_id") != _call.value?.callId) return
-        val o = runCatching { ev["candidate"]!!.jsonObject }.getOrNull() ?: return
+        val t = transport ?: return
+        val o = runCatching { Json.parseToJsonElement(t.decrypt(b64urlDecode(ev.str("msg")!!)!!).decodeToString()).jsonObject }
+            .getOrNull() ?: return
         val sdp = o.str("candidate") ?: return
         val index = o["sdpMLineIndex"]?.jsonPrimitive?.intOrNull ?: 0
         engine.addRemoteCandidate(IceCandidate(o.str("sdpMid"), index, sdp))
@@ -568,6 +695,10 @@ class AppController(private val app: Application) {
         val c = _call.value ?: return
         if (c.phase == CallPhase.Ended) return
         pendingOffer = null
+        handshake = null
+        transport = null
+        iceReady = false
+        iceOut.clear()
         tones.stop()
         engine.close()
         audio.stop()

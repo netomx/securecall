@@ -44,7 +44,7 @@ class Client:
         self.ws = await websockets.connect(URL)
         self.reader = asyncio.create_task(self._read())
         hello = await self.event("hello")
-        assert hello["v"] == 1
+        assert hello["v"] == 2
         return self
 
     async def _read(self):
@@ -318,23 +318,23 @@ async def test_calls():
     await make_friends(c, b)
 
     # Only friends, and only online ones
-    await c.err("call", "not_found", user_id=a.uid, call_id=new_call_id(), sdp="offer")
-    await a.err("call", "bad_request", user_id=b.uid, call_id="not-a-uuid", sdp="offer")
+    await c.err("call", "not_found", user_id=a.uid, call_id=new_call_id(), msg="offer")
+    await a.err("call", "bad_request", user_id=b.uid, call_id="not-a-uuid", msg="offer")
 
     # Ring, ICE both ways, answer, hang up
     cid = new_call_id()
-    await a.ok("call", user_id=b.uid, call_id=cid, sdp="offer-sdp")
+    await a.ok("call", user_id=b.uid, call_id=cid, msg="offer-msg")
     ev = await b.event("call_incoming")
-    assert ev == {"ev": "call_incoming", "call_id": cid, "user_id": a.uid, "sdp": "offer-sdp"}
-    cand = {"candidate": "candidate:1 1 udp 1 1.2.3.4 5 typ host", "sdpMid": "0", "sdpMLineIndex": 0}
-    await a.ok("call_ice", call_id=cid, candidate=cand)
-    assert (await b.event("call_ice"))["candidate"] == cand
-    await c.err("call", "busy", user_id=b.uid, call_id=new_call_id(), sdp="offer")
+    assert ev == {"ev": "call_incoming", "call_id": cid, "user_id": a.uid, "msg": "offer-msg"}
+    cand = "ice-msg"
+    await a.ok("call_ice", call_id=cid, msg=cand)
+    assert (await b.event("call_ice"))["msg"] == cand
+    await c.err("call", "busy", user_id=b.uid, call_id=new_call_id(), msg="offer")
     await c.err("call_end", "not_found", call_id=cid)  # not a participant
-    await a.err("call_answer", "bad_request", call_id=cid, sdp="x")  # caller cannot answer
-    await b.ok("call_answer", call_id=cid, sdp="answer-sdp")
-    assert (await a.event("call_answered"))["sdp"] == "answer-sdp"
-    await b.ok("call_ice", call_id=cid, candidate=cand)
+    await a.err("call_answer", "bad_request", call_id=cid, msg="x")  # caller cannot answer
+    await b.ok("call_answer", call_id=cid, msg="answer-msg")
+    assert (await a.event("call_answered"))["msg"] == "answer-msg"
+    await b.ok("call_ice", call_id=cid, msg=cand)
     await a.event("call_ice")
     await b.ok("call_end", call_id=cid)
     ev = await a.event("call_ended")
@@ -343,23 +343,23 @@ async def test_calls():
 
     # Reject
     cid = new_call_id()
-    await a.ok("call", user_id=b.uid, call_id=cid, sdp="offer")
+    await a.ok("call", user_id=b.uid, call_id=cid, msg="offer")
     await b.event("call_incoming")
     await b.ok("call_reject", call_id=cid)
     assert (await a.event("call_ended"))["reason"] == "rejected"
 
     # Caller disconnects while ringing
     cid = new_call_id()
-    await c.ok("call", user_id=b.uid, call_id=cid, sdp="offer")
+    await c.ok("call", user_id=b.uid, call_id=cid, msg="offer")
     await b.event("call_incoming")
     await c.close()
     assert (await b.event("call_ended"))["reason"] == "disconnected"
 
     # b is free again; a cannot start a second call while in one
     cid = new_call_id()
-    await a.ok("call", user_id=b.uid, call_id=cid, sdp="offer")
+    await a.ok("call", user_id=b.uid, call_id=cid, msg="offer")
     await b.event("call_incoming")
-    await a.err("call", "in_call", user_id=b.uid, call_id=new_call_id(), sdp="offer")
+    await a.err("call", "in_call", user_id=b.uid, call_id=new_call_id(), msg="offer")
     await a.ok("call_end", call_id=cid)
     assert (await b.event("call_ended"))["reason"] == "hangup"
 
@@ -368,7 +368,7 @@ async def test_calls():
     await make_friends(a, d)
     await d.close()
     await asyncio.sleep(0.3)
-    await a.err("call", "offline", user_id=d.uid, call_id=new_call_id(), sdp="offer")
+    await a.err("call", "offline", user_id=d.uid, call_id=new_call_id(), msg="offer")
     for x in (a, b):
         await x.close()
 

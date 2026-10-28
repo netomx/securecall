@@ -4,6 +4,8 @@ import android.content.Context
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Base64
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -15,6 +17,10 @@ import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
+
+/** base64url values. [psk] is set once both phones have scanned each other's QR. */
+@Serializable
+data class VerifyRecord(val ik: String, val rSelf: String, val rOther: String? = null, val psk: String? = null)
 
 /**
  * Device-local state. Secrets (session token, identity seed) are encrypted with an
@@ -47,15 +53,29 @@ class LocalStore(context: Context) {
     fun pins(): Map<String, String> = readMap(KEY_PINS)
     fun setPin(id: String, ik: String) = updateMap(KEY_PINS) { put(id, ik) }
 
+    /**
+     * In-person (QR) verification per contact, encrypted: the peer's identity key it applies to,
+     * our random value, theirs once scanned, and the resulting PSK.
+     */
+    fun verifications(): Map<String, VerifyRecord> =
+        getSecret(KEY_VERIFY)?.let { runCatching { Json.decodeFromString<Map<String, VerifyRecord>>(it.decodeToString()) }.getOrNull() }
+            .orEmpty()
+
+    fun updateVerifications(change: MutableMap<String, VerifyRecord>.() -> Unit) {
+        val map = verifications().toMutableMap().apply(change)
+        putSecret(KEY_VERIFY, Json.encodeToString<Map<String, VerifyRecord>>(map).encodeToByteArray())
+    }
+
     fun renameContact(oldId: String, newId: String) {
         updateMap(KEY_ALIASES) { remove(oldId)?.let { put(newId, it) } }
         updateMap(KEY_PINS) { remove(oldId)?.let { put(newId, it) } }
+        updateVerifications { remove(oldId)?.let { put(newId, it) } }
     }
 
     fun clearSession() = prefs.edit().remove(KEY_TOKEN).apply()
 
     /** New account on this device: forget the previous identity and contacts. */
-    fun resetAccount() = prefs.edit().remove(KEY_TOKEN).remove(KEY_SEED).remove(KEY_ALIASES).remove(KEY_PINS)
+    fun resetAccount() = prefs.edit().remove(KEY_TOKEN).remove(KEY_SEED).remove(KEY_ALIASES).remove(KEY_PINS).remove(KEY_VERIFY)
         .remove(KEY_USER_ID).remove(KEY_USERNAME).apply()
 
     private fun readMap(key: String): Map<String, String> {
@@ -116,5 +136,6 @@ class LocalStore(context: Context) {
         const val KEY_USERNAME = "username"
         const val KEY_ALIASES = "aliases"
         const val KEY_PINS = "pins"
+        const val KEY_VERIFY = "verifications"
     }
 }

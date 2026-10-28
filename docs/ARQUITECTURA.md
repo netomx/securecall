@@ -11,7 +11,7 @@ Licencia: **AGPL-3.0**. Paquete Android: `com.cim.securecall`. Nombre de la app:
 | Tema | Decisión |
 |---|---|
 | Medios | Solo voz, 1 a 1, WebRTC (Opus). Licencia BSD-3, sin restricciones |
-| Cifrado | DTLS-SRTP (WebRTC) **+** cifrado propio por frame con llave E2E del par |
+| Cifrado | DTLS-SRTP (WebRTC) con las huellas DTLS autenticadas E2E por un handshake Noise entre las llaves de identidad |
 | Cuentas | Usuario + contraseña. **Sin correo.** Recuperación con código offline |
 | Amigos | Solo por UUID (QR o enlace), con solicitud y aceptación |
 | Llaves | Automática (TOFU) por defecto. Verificada por QR en persona |
@@ -38,8 +38,9 @@ Licencia: **AGPL-3.0**. Paquete Android: `com.cim.securecall`. Nombre de la app:
                                                 └──────────────────────────┘
 ```
 
-- **`apps/core/`**: biblioteca C++ con toda la criptografía (libsodium): handshake por llamada,
-  cifrado de frames y formato de QR. Android la usa vía JNI y iOS la podrá reutilizar tal cual.
+- **Capa E2E** (`apps/android/.../crypto/`, ~300 líneas de Kotlin): handshake Noise por llamada y
+  verificación por QR. Referencia en Python en `tools/kalloq_crypto.py`, que interopera con la biblioteca
+  `noiseprotocol`; los tests de Android usan sus vectores. iOS la reimplementará con CryptoKit contra esos vectores.
 - **`apps/server/` (`sc-server`)**: señalización, cuentas, amigos, entrega de llaves públicas,
   credenciales TURN temporales y push. **Nunca ve audio ni llaves privadas.**
 - **coturn**: relay TURN para cuando no hay P2P. Solo ve paquetes cifrados.
@@ -75,31 +76,45 @@ Cada dispositivo genera al instalarse o iniciar sesión:
 
 ### 4.1 Llave automática (TOFU)
 - Al aceptar la amistad, cada lado descarga el `IK` público del otro y lo **fija** (pin).
-- `PSK_par = HKDF(X25519(IK_a, IK_b), "sc-pair-v1" ‖ uuid_a ‖ uuid_b)`.
+- Sin verificación en persona el `psk` de Noise son 32 bytes en cero: la seguridad descansa en las llaves fijadas.
 - Si el `IK` del contacto cambia, se muestra **⚠ "La llave de X cambió"** y se pide confirmar.
 
 ### 4.2 Llave verificada por QR (en persona)
-1. A muestra un QR con `uuid_A`, `fp(IK_A)` y 32 bytes aleatorios `r_A`. B lo escanea.
-2. B muestra un QR con `uuid_B`, `fp(IK_B)` y `r_B`. A lo escanea.
-3. Cada uno comprueba que la huella `fp` coincide con la llave fijada (si no coincide, hay un
-   ataque MITM o la llave cambió).
-4. `PSK_par = HKDF(X25519(IK_a, IK_b) ‖ r_A ‖ r_B, "sc-qr-v1")`. El contacto queda **✔ verificado**.
+1. A muestra un QR `kalloq-verify:1:<uuid_A>:<IK_A>:<r_A>` (`r_A` = 32 bytes aleatorios). B lo escanea.
+2. B muestra el suyo con `uuid_B`, `IK_B` y `r_B`. A lo escanea.
+3. Cada uno comprueba que la llave del QR es la que tiene fijada (si no, hay un MITM o la llave cambió).
+4. `PSK_par = HKDF-SHA256(X25519(IK_a, IK_b) ‖ IK_1 ‖ r_1 ‖ IK_2 ‖ r_2, info "kalloq/qr/1")`, con 1 y 2
+   ordenados por llave. El contacto queda **✔ verificado** y ambos teléfonos muestran un código de 9 dígitos
+   derivado del PSK que debe coincidir.
+5. Cada `r` se guarda (cifrado) hasta que se reinicia la verificación, así el orden de escaneo no importa.
+   Si el PSK no coincide en una llamada, quien recibe la rechaza y avisa "verifiquen de nuevo".
 
 `r_A` y `r_B` nunca pasan por el servidor, así que aunque el servidor fuera malicioso no conoce el PSK.
 
 ### 4.3 Cambiar la llave
-- "Regenerar llave con X": se repite la automática con un nuevo valor aleatorio, o se vuelve a escanear el QR.
+- "Empezar de nuevo" en la verificación: nuevos `r` y se vuelve a escanear el QR. "Quitar verificación" vuelve a TOFU.
+- Al confirmar una llave cambiada se borra la verificación anterior.
 - "Regenerar mi identidad": nuevo `IK` y todos los amigos ven el aviso.
 
 ### 4.4 Llaves por llamada (forward secrecy)
-En cada llamada se hace un handshake **Noise `KKpsk2`** (X25519, ChaChaPoly, BLAKE2b) con:
-- llaves estáticas = `IK` de ambos,
-- `psk` = `PSK_par`,
-- *prologue* = huellas DTLS de ambos SDP (amarra el DTLS de WebRTC a nuestras identidades).
+En cada llamada se hace un handshake **`Noise_KKpsk2_25519_AESGCM_SHA256`** con:
+- llaves estáticas = forma X25519 de los `IK` fijados,
+- `psk` = `PSK_par` (o ceros sin verificación),
+- *prologue* = `"kalloq/call/1\0" ‖ call_id` (una oferta no se puede reutilizar en otra llamada).
 
-Los mensajes del handshake viajan dentro de la oferta y la respuesta de señalización. El resultado
-es una llave de sesión efímera que se usa en el **FrameEncryptor/FrameDecryptor** de libwebrtc
-(XChaCha20-Poly1305 por frame Opus) y se borra al colgar.
+El mensaje 1 lleva cifrado `{sdp: oferta, psk: id}` y el mensaje 2 `{sdp: respuesta}`. Como el SDP va
+cifrado y autenticado por las dos identidades, las **huellas DTLS** que contiene son las reales: WebRTC
+verifica el certificado DTLS contra ellas, así que las llaves SRTP del audio solo las tienen los dos
+teléfonos (ni el servidor ni TURN pueden descifrar ni hacer MITM). Después del handshake, los candidatos
+ICE viajan cifrados con las llaves de transporte de Noise (nonce explícito de 8 bytes, sin repetición).
+
+Ambas pantallas muestran un **código de seguridad** de 6 dígitos derivado del hash del handshake;
+si coincide al compararlo de viva voz, no hay nadie en medio.
+
+**Cifrado por frame (descartado por ahora):** en el SDK WebRTC de Android, `FrameEncryptor` solo acepta
+un objeto C++ nativo enlazado contra libwebrtc, que no expone su ABI de C++. Con las huellas DTLS
+autenticadas E2E, DTLS-SRTP ya da cifrado de extremo a extremo; el cifrado por frame sería defensa en
+profundidad y requiere compilar libwebrtc propio.
 
 ---
 
@@ -127,7 +142,7 @@ A                         sc-server                       B
 │◀════════ ICE: P2P o TURN (SRTP + frames E2E) ══════════▶│
 ```
 
-- El SDP (que lleva IPs) va **cifrado E2E** con `PSK_par`. El servidor solo ve "A llama a B".
+- El SDP y los candidatos ICE (que llevan IPs) van **cifrados E2E** (Noise). El servidor solo ve "A llama a B".
 - La oferta expira en 45 s. Mensajes: `call_offer`, `call_answer`, `ice`, `call_reject`, `call_end`, `call_busy`.
 - Credenciales TURN: `turn_credentials` con usuario y contraseña HMAC temporales (TTL 1 h) usando
   el secreto compartido de coturn (`use-auth-secret`).
@@ -150,8 +165,8 @@ A                         sc-server                       B
 spdlog, libcurl, OpenSSL (JWT para FCM). Corre como servicio systemd con usuario sin privilegios,
 detrás de nginx + certbot. coturn instalado desde apt.
 
-**Android:** Kotlin, Jetpack Compose, minSdk 26, `io.github.webrtc-sdk:android`, `core` vía JNI
-(NDK + CMake), Room + SQLCipher, Android Keystore, CameraX + ML Kit (leer QR), ZXing (generar QR),
+**Android:** Kotlin, Jetpack Compose, minSdk 26, `io.github.webrtc-sdk:android`, Tink (Ed25519, X25519),
+AES-GCM de la plataforma, Android Keystore, ZXing (generar y leer QR),
 Firebase Messaging, Telecom `ConnectionService`. Idioma por app con `AppCompatDelegate.setApplicationLocales`.
 
 **Protocolo de señalización:** JSON sobre WSS, versionado (`"v":1`), fácil de reutilizar en iOS.
@@ -163,10 +178,10 @@ Firebase Messaging, Telecom `ConnectionService`. Idioma por app con `AppCompatDe
 ```
 secure-call/
 ├── apps/
-│   ├── core/    # C++ cripto compartida (Android/iOS) + tests
 │   ├── server/  # sc-server (C++) + pruebas de integración
 │   └── android/ # proyecto Android Studio
 ├── deploy/      # nginx, coturn, certbot, scripts de instalación Debian
+├── tools/       # referencia Python de la capa E2E y peer de pruebas (aiortc)
 └── docs/        # arquitectura, protocolo, modelo de amenazas
 ```
 
@@ -180,7 +195,7 @@ secure-call/
 | 1 | ✅ `sc-server`: registro, login, recuperación, sesiones, amigos, llaves públicas ([protocolo](PROTOCOLO.md)) |
 | 2 | ✅ Android: login/registro, código de recuperación, amigos por QR/enlace, ES/EN (`apps/android`) |
 | 3 | ✅ Llamadas de voz WebRTC (señalización + TURN), silenciar, altavoz, Bluetooth, servicio en primer plano. Sin capa E2E extra todavía: hoy el audio va cifrado con DTLS-SRTP entre los teléfonos, pero las huellas DTLS pasan por el servidor sin verificar |
-| 4 | `core`: Noise KKpsk2 + cifrado de frames + verificación por QR |
+| 4 | ✅ E2E: Noise KKpsk2 por llamada (SDP e ICE cifrados, huellas DTLS autenticadas), código de seguridad en llamada, verificación en persona por QR con PSK |
 | 5 | Push FCM + ConnectionService (recibir llamadas con la app cerrada) |
 | 6 | Endurecimiento: rate limits, fuzzing del protocolo, revisión de seguridad, release |
 

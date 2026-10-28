@@ -145,6 +145,12 @@ fun noticeText(n: Notice): String = when (n) {
             "network" -> R.string.err_network
             "mismatch" -> R.string.err_mismatch
             "mic" -> R.string.err_mic
+            "key_changed" -> R.string.err_key_changed
+            "e2e_failed" -> R.string.err_e2e_failed
+            "verify_mismatch" -> R.string.err_verify_mismatch
+            "verify_invalid" -> R.string.err_verify_invalid
+            "verify_other" -> R.string.err_verify_other
+            "verify_key" -> R.string.err_verify_key
             else -> R.string.err_generic
         }
     )

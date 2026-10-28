@@ -163,7 +163,7 @@ void App::offload(Request r, Work work, Done done) {
 
 void App::on_open(const std::shared_ptr<Session>& s) {
     ++connections_;
-    s->send(dump(event("hello", {{"v", 1}, {"server", std::string("sc-server/") + SC_VERSION}})));
+    s->send(dump(event("hello", {{"v", 2}, {"server", std::string("sc-server/") + SC_VERSION}})));
 }
 
 void App::on_closed(Session& s) {
@@ -563,8 +563,9 @@ void App::op_turn(Request r) {
 // Calls
 
 namespace {
-constexpr std::size_t kMaxSdp = 12 * 1024;
-constexpr std::size_t kMaxCandidate = 2048;
+// Call payloads are end-to-end encrypted (Noise) and opaque to the server: base64url strings.
+constexpr std::size_t kMaxHandshake = 14 * 1024;
+constexpr std::size_t kMaxIce = 3 * 1024;
 constexpr auto kRingTimeout = std::chrono::seconds(45);
 }  // namespace
 
@@ -599,7 +600,7 @@ void App::op_call(Request r) {
     auto me = current_user(r);
     auto other = other_user(r);
     const auto& call_id = str_param(r.body, "call_id", 1, 64);
-    const auto& sdp = str_param(r.body, "sdp", 1, kMaxSdp);
+    const auto& msg = str_param(r.body, "msg", 1, kMaxHandshake);
     if (!crypto::is_uuid(call_id) || calls_.count(call_id)) throw ApiError("bad_request");
     if (store_.relation(me.id, other.id) != Relation::friends) throw ApiError("not_found");
     if (user_call_.count(me.id)) throw ApiError("in_call");
@@ -621,25 +622,24 @@ void App::op_call(Request r) {
     user_call_[me.id] = call_id;
     user_call_[other.id] = call_id;
 
-    notify(other.id, event("call_incoming", {{"call_id", call_id}, {"user_id", me.uuid}, {"sdp", sdp}}));
+    notify(other.id, event("call_incoming", {{"call_id", call_id}, {"user_id", me.uuid}, {"msg", msg}}));
     reply(r);
 }
 
 void App::op_call_answer(Request r) {
     auto call = call_for(r);
-    const auto& sdp = str_param(r.body, "sdp", 1, kMaxSdp);
+    const auto& msg = str_param(r.body, "msg", 1, kMaxHandshake);
     if (call->callee != *r.session->user_id || call->active) throw ApiError("bad_request");
     call->active = true;
     call->ring_timer->cancel();
-    notify(call->caller, event("call_answered", {{"call_id", call->id}, {"sdp", sdp}}));
+    notify(call->caller, event("call_answered", {{"call_id", call->id}, {"msg", msg}}));
     reply(r);
 }
 
 void App::op_call_ice(Request r) {
     auto call = call_for(r);
-    auto cand = r.body.find("candidate");
-    if (cand == r.body.end() || !cand->is_object() || cand->dump().size() > kMaxCandidate) throw ApiError("bad_request");
-    notify(peer_of(*call, *r.session->user_id), event("call_ice", {{"call_id", call->id}, {"candidate", *cand}}));
+    const auto& msg = str_param(r.body, "msg", 1, kMaxIce);
+    notify(peer_of(*call, *r.session->user_id), event("call_ice", {{"call_id", call->id}, {"msg", msg}}));
     reply(r);
 }
 
