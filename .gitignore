@@ -1,0 +1,44 @@
+# C++ / CMake
+build/
+cmake-build-*/
+CMakeUserPresets.json
+compile_commands.json
+*.o
+*.a
+*.so
+
+# Server runtime data
+*.db
+*.db-wal
+*.db-shm
+*.env
+server/config.local.*
+
+# Android
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/.idea/
+android/captures/
+android/.externalNativeBuild/
+android/.cxx/
+*.apk
+*.aab
+*.jks
+*.keystore
+google-services.json
+
+# Secrets
+*.ppk
+*.pem
+*_key
+*.key
+firebase-service-account*.json
+
+# Editors / OS
+.vscode/
+.idea/
+*.iml
+.DS_Store
+Thumbs.db
