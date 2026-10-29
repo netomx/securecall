@@ -24,7 +24,7 @@ ufw allow 3478 && ufw allow 5349 && ufw allow 49152:65535/udp && ufw enable
 
 # Web + certificado
 mkdir -p /var/www/letsencrypt /var/www/call.l8.nz
-install -m 644 www/invite.html /var/www/call.l8.nz/
+install -m 644 www/invite.html www/privacy.html /var/www/call.l8.nz/   # privacy.html: https://call.l8.nz/privacy (Google Play)
 install -D -m 644 www/.well-known/assetlinks.json /var/www/call.l8.nz/.well-known/assetlinks.json  # huella de la llave release
 rm -f /etc/nginx/sites-enabled/default
 install -m 644 nginx/acme-only.conf /etc/nginx/sites-available/call.l8.nz
