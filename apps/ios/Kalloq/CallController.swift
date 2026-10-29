@@ -147,8 +147,9 @@ final class CallController: ObservableObject {
                 let payload = JSONValue.object([
                     "sdp": .string(offer),
                     "psk": .string(CallCrypto.pskId(keys.psk)),
-                    // lets the other phone refuse an offer the server kept and replayed
-                    "ts": .number(Date().timeIntervalSince1970 * 1000),
+                    // lets the other phone refuse an offer the server kept and replayed; whole
+                    // milliseconds, as Android sends it and reads it (a fraction fails its longOrNull)
+                    "ts": .number((Date().timeIntervalSince1970 * 1000).rounded(.down)),
                 ])
                 self.handshake = handshake
                 let message = try handshake.writeOffer(payload.encoded())
@@ -172,10 +173,12 @@ final class CallController: ObservableObject {
         if call?.callId == callId, call?.phase == .incoming { return }  // the same call again after reconnecting
         if call != nil {
             // Already in a call; the server normally answers "busy" before this.
+            Log.info("call: incoming refused (already in a call)")
             reject(callId)
             return
         }
         let refuse = { [self] (notice: String?) in
+            Log.info("call: incoming refused (\(notice ?? "declined, replayed or stale"))")
             reject(callId)
             stopPushedRinging()
             if let notice { context?.show(.error(notice)) }
@@ -197,7 +200,14 @@ final class CallController: ObservableObject {
         // The server could replay a call it relayed before: it decrypts, but must not ring again.
         let sentAt = offer["ts"]?.doubleValue.map { $0 / 1000 }
         guard let sentAt, abs(Date().timeIntervalSince1970 - sentAt) <= Self.offerMaxAge,
-              !store.callSeen(callId) else { return refuse(nil) }
+              !store.callSeen(callId) else {
+            if let sentAt {
+                Log.info("call: offer refused, skew \(Int(Date().timeIntervalSince1970 - sentAt)) s, seen \(store.callSeen(callId))")
+            } else {
+                Log.info("call: offer refused, no ts (\(offer["ts"].map { "\($0)" } ?? "missing"))")
+            }
+            return refuse(nil)
+        }
 
         pendingOffer = sdp
         self.handshake = handshake
@@ -392,6 +402,7 @@ final class CallController: ObservableObject {
     }
 
     private func reject(_ callId: String) {
+        Log.info("call: sending call_reject")
         Task { try? await server.call("call_reject", ["call_id": .string(callId)]) }
     }
 
@@ -446,6 +457,7 @@ final class CallController: ObservableObject {
 
     /// Tears down the media and leaves the reason on screen for a moment.
     private func finish(_ reason: String?) {
+        Log.info("call: finished (\(reason ?? "-"))")
         guard let current = call, current.phase != .ended else { return }
         if !current.outgoing { store.markCallSeen(current.callId) }
         ringTimeout?.cancel()
@@ -536,6 +548,7 @@ extension CallController: SystemCallListener {
     }
 
     func onSystemDisconnect() {
+        Log.info("call: system ended the call (phase \(call.map { "\($0.phase)" } ?? "none"))")
         guard let current = call, current.phase != .ended else {
             if systemCall.ringingForPush {
                 // Declined on the system's screen before the offer arrived: refuse it when it does.

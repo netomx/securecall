@@ -32,16 +32,19 @@ extension PushRegistry: PKPushRegistryDelegate {
     func pushRegistry(_ registry: PKPushRegistry, didUpdate credentials: PKPushCredentials, for type: PKPushType) {
         guard type == .voIP else { return }
         let token = credentials.token.map { String(format: "%02x", $0) }.joined()
+        Log.info("push: VoIP token received (\(credentials.token.count) bytes)")
         Task { @MainActor [onToken] in onToken(token) }
     }
 
     func pushRegistry(_ registry: PKPushRegistry, didInvalidatePushTokenFor type: PKPushType) {
         guard type == .voIP else { return }
+        Log.info("push: VoIP token invalidated")
         Task { @MainActor [onToken] in onToken(nil) }
     }
 
     func pushRegistry(_ registry: PKPushRegistry, didReceiveIncomingPushWith payload: PKPushPayload,
                       for type: PKPushType, completion: @escaping () -> Void) {
+        Log.info("push: VoIP push arrived")
         systemCall.reportPushedCall(listener: listener, completion: completion)
         Task { @MainActor [onPush] in onPush() }
     }

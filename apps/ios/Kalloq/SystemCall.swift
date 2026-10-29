@@ -65,6 +65,7 @@ final class SystemCall: NSObject {
         let uuid = UUID()
         callUUID = uuid
         provider.reportNewIncomingCall(with: uuid, update: update) { [weak self] error in
+            Log.info("callkit: incoming reported, error \(error.map { "\($0)" } ?? "none")")
             guard error != nil, let self else { return }
             self.callUUID = nil
             Task { @MainActor [listener = self.listener] in listener?.onSystemUnavailable() }
@@ -233,6 +234,7 @@ extension SystemCall: CXProviderDelegate {
      * hanging up, and the call has to carry on in our own screen.
      */
     func providerDidReset(_ provider: CXProvider) {
+        Log.info("callkit: provider reset (took the call: \(systemTookTheCall))")
         let tookIt = systemTookTheCall
         callUUID = nil
         systemTookTheCall = false

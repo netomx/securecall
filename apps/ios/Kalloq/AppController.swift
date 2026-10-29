@@ -216,6 +216,7 @@ final class AppController: ObservableObject {
     /// The token goes with the session on the server, so it is sent again after every login.
     private func sendPushToken() async {
         guard let token = calls.pushToken else {
+            Log.info("push: no token from PushKit yet")
             // iOS withdrew the token: make the server forget it too, or it would keep pushing into the void.
             if pushReady { _ = try? await server.call("set_push", ["token": .string(""), "platform": .string(Self.pushPlatform)]) }
             pushReady = false
@@ -224,8 +225,10 @@ final class AppController: ObservableObject {
         do {
             try await server.call("set_push", ["token": .string(token), "platform": .string(Self.pushPlatform)])
             pushReady = true
+            Log.info("push: set_push ok (\(Self.pushPlatform))")
         } catch {
             pushReady = false
+            Log.info("push: set_push failed: \(error)")
         }
     }
 

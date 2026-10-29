@@ -197,7 +197,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Kalloq;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Kalloq necesita el micrófono para tus llamadas.";
-				INFOPLIST_KEY_UIBackgroundModes = "audio voip";
+				INFOPLIST_FILE = "Kalloq-Info.plist";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
@@ -224,7 +224,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Kalloq;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Kalloq necesita el micrófono para tus llamadas.";
-				INFOPLIST_KEY_UIBackgroundModes = "audio voip";
+				INFOPLIST_FILE = "Kalloq-Info.plist";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
