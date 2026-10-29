@@ -60,30 +60,30 @@ struct CallView: View {
 
     private var status: String {
         if call.phase == .ended { return endedText }
-        if call.onHold { return "En espera por otra llamada" }
-        if call.peerOnHold { return "\(name) está en otra llamada" }
-        if call.reconnecting { return "Reconectando…" }
+        if call.onHold { return String(localized: "En espera por otra llamada") }
+        if call.peerOnHold { return String(localized: "\(name) está en otra llamada") }
+        if call.reconnecting { return String(localized: "Reconectando…") }
         switch call.phase {
-        case .calling: return "Llamando…"
-        case .incoming: return "Llamada entrante"
-        case .connecting: return "Conectando…"
-        case .active: return call.verified ? "Cifrada y verificada" : "Cifrada de extremo a extremo"
+        case .calling: return String(localized: "Llamando…")
+        case .incoming: return String(localized: "Llamada entrante")
+        case .connecting: return String(localized: "Conectando…")
+        case .active: return call.verified ? String(localized: "Cifrada y verificada") : String(localized: "Cifrada de extremo a extremo")
         case .ended: return endedText
         }
     }
 
     private var endedText: String {
         switch call.endReason {
-        case "hangup", nil: return "Llamada terminada"
-        case "rejected": return "Llamada rechazada"
-        case "timeout": return "Sin respuesta"
-        case "busy": return "Está en otra llamada"
-        case "offline": return "No está disponible"
-        case "disconnected": return "Se perdió la conexión"
-        case "e2e_failed": return "No se pudo cifrar la llamada"
-        case "no_microphone": return "Sin permiso para el micrófono"
-        case "failed": return "No se pudo conectar el audio"
-        default: return "Llamada terminada"
+        case "hangup", nil: return String(localized: "Llamada terminada")
+        case "rejected": return String(localized: "Llamada rechazada")
+        case "timeout": return String(localized: "Sin respuesta")
+        case "busy": return String(localized: "Está en otra llamada")
+        case "offline": return String(localized: "No está disponible")
+        case "disconnected": return String(localized: "Se perdió la conexión")
+        case "e2e_failed": return String(localized: "No se pudo cifrar la llamada")
+        case "no_microphone": return String(localized: "Sin permiso para el micrófono")
+        case "failed": return String(localized: "No se pudo conectar el audio")
+        default: return String(localized: "Llamada terminada")
         }
     }
 
@@ -127,7 +127,7 @@ struct CallView: View {
 private struct CallButton: View {
     let icon: String
     let tint: Color
-    let label: String
+    let label: LocalizedStringKey
     var small = false
     let action: () -> Void
 
@@ -140,6 +140,6 @@ private struct CallButton: View {
                 .background(small ? AnyShapeStyle(.quaternary) : AnyShapeStyle(tint), in: Circle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(label)
+        .accessibilityLabel(Text(label))
     }
 }

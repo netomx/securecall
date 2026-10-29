@@ -92,7 +92,7 @@
 			};
 			buildConfigurationList = 1A000000000000000000000A /* Build configuration list for PBXProject "Kalloq" */;
 			compatibilityVersion = "Xcode 15.0";
-			developmentRegion = en;
+			developmentRegion = es;
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
@@ -196,6 +196,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Kalloq;
+				INFOPLIST_KEY_NSCameraUsageDescription = "Kalloq usa la cámara solo para leer códigos QR de tus contactos.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Kalloq necesita el micrófono para tus llamadas.";
 				INFOPLIST_FILE = "Kalloq-Info.plist";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -223,6 +224,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Kalloq;
+				INFOPLIST_KEY_NSCameraUsageDescription = "Kalloq usa la cámara solo para leer códigos QR de tus contactos.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Kalloq necesita el micrófono para tus llamadas.";
 				INFOPLIST_FILE = "Kalloq-Info.plist";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;

@@ -11,6 +11,7 @@ final class Store {
     private static let service = "com.cim.securecall"
     private static let tokenKey = "token"
     private static let seedKey = "identity_seed"
+    private static let verifyKey = "verifications"
 
     private let defaults = UserDefaults.standard
 
@@ -45,7 +46,32 @@ final class Store {
     /// means "key changed".
     private(set) var pins: [String: String] = [:]
 
-    init() { load() }
+    /**
+     * In-person (QR) verification per contact, as Android's `VerifyRecord`: the identity key it
+     * applies to, our random value, theirs once scanned, and the resulting PSK (all base64url). In
+     * the Keychain, because the PSK is what keeps a call private if the server ever swaps keys.
+     */
+    struct VerifyRecord: Codable, Equatable {
+        var ik: String
+        var rSelf: String
+        var rOther: String?
+        var psk: String?
+    }
+
+    private(set) var verifications: [String: VerifyRecord] = [:]
+
+    init() {
+        load()
+        if let data = Self.secret(Self.verifyKey),
+           let stored = try? JSONDecoder().decode([String: VerifyRecord].self, from: data) {
+            verifications = stored
+        }
+    }
+
+    func setVerification(_ id: String, _ record: VerifyRecord?) {
+        verifications[id] = record
+        Self.setSecret(Self.verifyKey, try? JSONEncoder().encode(verifications))
+    }
 
     func setAlias(_ id: String, _ alias: String?) {
         let trimmed = alias?.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -64,10 +90,11 @@ final class Store {
      * we already know.
      */
     func renameContact(from oldId: String, to newId: String) {
-        guard oldId != newId, pins[newId] == nil, aliases[newId] == nil else { return }
+        guard oldId != newId, pins[newId] == nil, aliases[newId] == nil, verifications[newId] == nil else { return }
         if let alias = aliases[oldId] { aliases[newId] = alias }
         if let pin = pins[oldId] { pins[newId] = pin }
         save()
+        if let record = verifications[oldId] { setVerification(newId, record) }
     }
 
     /// Incoming call ids already handled, so an offer the server replays does not ring again.
@@ -95,6 +122,8 @@ final class Store {
         aliases = [:]
         pins = [:]
         save()
+        verifications = [:]
+        Self.setSecret(Self.verifyKey, nil)
     }
 
     // ---------------------------------------------------------------- contacts file

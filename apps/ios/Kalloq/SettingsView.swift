@@ -1,7 +1,6 @@
 import SwiftUI
 
-/// Account and security, as in Android's settings screen. Language (ES/EN) arrives with the
-/// localisation step; push with APNs after that.
+/// Account, calls, language and security, as in Android's settings screen.
 struct SettingsView: View {
     @EnvironmentObject private var app: AppController
     @Environment(\.dismiss) private var dismiss
@@ -12,6 +11,8 @@ struct SettingsView: View {
     @State private var confirmDelete = false
     @State private var password = ""
     @State private var newPassword = ""
+    @State private var language = AppLanguage.current
+    private let startLanguage = AppLanguage.current
 
     var body: some View {
         NavigationStack {
@@ -28,10 +29,25 @@ struct SettingsView: View {
                 }
 
                 Section {
-                    LabeledContent("Recibir llamadas", value: app.pushReady ? "Con la app cerrada" : "Solo con la app abierta")
+                    LabeledContent("Recibir llamadas") {
+                        Text(app.pushReady ? "Con la app cerrada" : "Solo con la app abierta")
+                    }
                 } footer: {
                     if !app.pushReady {
                         Text("Este teléfono todavía no puede recibir llamadas con Kalloq cerrada.")
+                    }
+                }
+
+                Section {
+                    Picker("Idioma", selection: $language) {
+                        Text("Predeterminado del sistema").tag(AppLanguage.system)
+                        Text(verbatim: "Español").tag(AppLanguage.es)
+                        Text(verbatim: "English").tag(AppLanguage.en)
+                    }
+                    .onChange(of: language) { AppLanguage.current = $0 }
+                } footer: {
+                    if language != startLanguage {
+                        Text("El idioma cambia la próxima vez que abras Kalloq.")
                     }
                 }
 
@@ -135,5 +151,27 @@ extension Bundle {
         let name = infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
         let build = infoDictionary?["CFBundleVersion"] as? String ?? "?"
         return "\(name) (\(build))"
+    }
+}
+
+/// The language chosen inside the app, as Android lets you. iOS reads `AppleLanguages` from the
+/// app's own defaults at launch, so a choice takes effect the next time the app opens; "system"
+/// removes it and follows the phone (or the per-app language in iOS Settings).
+enum AppLanguage: String {
+    case system = "", es, en
+
+    static var current: AppLanguage {
+        get {
+            let own = UserDefaults.standard.persistentDomain(forName: Bundle.main.bundleIdentifier ?? "")
+            let code = (own?["AppleLanguages"] as? [String])?.first.map { String($0.prefix(2)) }
+            return code.flatMap(AppLanguage.init(rawValue:)) ?? .system
+        }
+        set {
+            if newValue == .system {
+                UserDefaults.standard.removeObject(forKey: "AppleLanguages")
+            } else {
+                UserDefaults.standard.set([newValue.rawValue], forKey: "AppleLanguages")
+            }
+        }
     }
 }

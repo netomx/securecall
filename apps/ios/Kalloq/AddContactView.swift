@@ -8,6 +8,7 @@ struct AddContactView: View {
     @Environment(\.colorScheme) private var scheme
 
     @State private var typed = ""
+    @State private var scanning = false
 
     var body: some View {
         NavigationStack {
@@ -43,6 +44,12 @@ struct AddContactView: View {
                 }
 
                 Section {
+                    Button {
+                        scanning = true
+                    } label: {
+                        Label("Escanear código QR", systemImage: "qrcode.viewfinder")
+                    }
+
                     TextField("ID o enlace de tu contacto", text: $typed, axis: .vertical)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
@@ -56,11 +63,18 @@ struct AddContactView: View {
                 } header: {
                     Text("Agregar contacto")
                 } footer: {
-                    Text("Pega el ID o el enlace que te pasaron. Leer el QR con la cámara llega junto con la verificación en persona.")
+                    Text("Escanea su código o pega el ID o el enlace que te pasaron.")
                 }
             }
             .navigationTitle("Agregar contacto")
             .navigationBarTitleDisplayMode(.inline)
+            .sheet(isPresented: $scanning) {
+                QRScannerSheet(prompt: "Apunta al código QR de Kalloq de tu contacto") { text in
+                    // The same confirmation as an opened link: the code could be anyone's.
+                    dismiss()
+                    app.openInvite(text)
+                }
+            }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancelar") { dismiss() }

@@ -9,6 +9,8 @@ struct Friend: Identifiable, Equatable {
     var fingerprint: String?
     var keyChanged: Bool
     var pinned: String?  // the identity key we trust for this contact
+    var verified = false  // in-person QR verification done, for the pinned key
+    var verifyCode: String?  // shown on both phones after scanning; must match
 
     var displayName: String { alias ?? String(id.prefix(8)) }
 }
@@ -27,32 +29,35 @@ enum Notice: Equatable, Identifiable {
     var text: String {
         switch self {
         case .info(let text): return text
-        case .error(let code): return Self.errors[code] ?? "Algo salió mal (\(code))"
+        case .error(let code): return Self.errors[code] ?? String(localized: "Algo salió mal (\(code))")
         }
     }
 
     /// The codes of `docs/PROTOCOLO.md`, worded as in Android's `values-es/strings.xml`.
     private static let errors = [
-        "invalid_username": "Usuario inválido: 6–32 caracteres, a–z, 0–9, _ y .",
-        "weak_password": "La contraseña necesita al menos 10 caracteres",
-        "username_taken": "Ese usuario ya existe",
-        "invalid_credentials": "Usuario, contraseña o código incorrectos",
-        "rate_limited": "Demasiados intentos, espera unos minutos",
-        "busy": "El servidor está ocupado, intenta de nuevo",
-        "not_found": "Usuario no encontrado",
-        "blocked": "Bloqueaste a este usuario",
-        "invalid_id": "Eso no es un ID de Kalloq válido",
-        "self": "Ese es tu propio ID",
-        "network": "No se puede conectar al servidor",
-        "timeout": "No se puede conectar al servidor",
-        "disconnected": "No se puede conectar al servidor",
-        "identity_unreadable": "No se puede leer tu llave de identidad guardada",
-        "key_changed": "La llave de este contacto cambió: confírmala antes de llamar",
-        "e2e_failed": "No se pudo cifrar la llamada con este contacto",
-        "verify_mismatch": "La verificación en persona ya no coincide: verifiquen de nuevo",
-        "no_microphone": "Kalloq necesita permiso para usar el micrófono",
-        "offline": "Ese contacto no está disponible",
-        "in_call": "Ya estás en una llamada",
+        "invalid_username": String(localized: "Usuario inválido: 6–32 caracteres, a–z, 0–9, _ y ."),
+        "weak_password": String(localized: "La contraseña necesita al menos 10 caracteres"),
+        "username_taken": String(localized: "Ese usuario ya existe"),
+        "invalid_credentials": String(localized: "Usuario, contraseña o código incorrectos"),
+        "rate_limited": String(localized: "Demasiados intentos, espera unos minutos"),
+        "busy": String(localized: "El servidor está ocupado, intenta de nuevo"),
+        "not_found": String(localized: "Usuario no encontrado"),
+        "blocked": String(localized: "Bloqueaste a este usuario"),
+        "invalid_id": String(localized: "Eso no es un ID de Kalloq válido"),
+        "self": String(localized: "Ese es tu propio ID"),
+        "network": String(localized: "No se puede conectar al servidor"),
+        "timeout": String(localized: "No se puede conectar al servidor"),
+        "disconnected": String(localized: "No se puede conectar al servidor"),
+        "identity_unreadable": String(localized: "No se puede leer tu llave de identidad guardada"),
+        "key_changed": String(localized: "La llave de este contacto cambió: confírmala antes de llamar"),
+        "e2e_failed": String(localized: "No se pudo cifrar la llamada con este contacto"),
+        "verify_mismatch": String(localized: "Falló una llamada porque su verificación por QR con ese contacto no coincide. Verifiquen de nuevo."),
+        "verify_invalid": String(localized: "Ese no es un código de verificación de Kalloq"),
+        "verify_other": String(localized: "Ese código es de otro contacto"),
+        "verify_key": String(localized: "La llave de ese código no coincide con la que tienes para este contacto"),
+        "no_microphone": String(localized: "Kalloq necesita permiso para usar el micrófono"),
+        "offline": String(localized: "Ese contacto no está disponible"),
+        "in_call": String(localized: "Ya estás en una llamada"),
     ]
 }
 
@@ -161,7 +166,7 @@ final class AppController: ObservableObject {
                     backoffMs = 500
                     await self.server.waitUntilDisconnected()
                 } catch let error as ServerError where error.code == "invalid_token" {
-                    self.signedOut(reason: "La sesión expiró, inicia sesión de nuevo")
+                    self.signedOut(reason: String(localized: "La sesión expiró, inicia sesión de nuevo"))
                     return
                 } catch {
                     // network error: wait and try again
@@ -295,15 +300,15 @@ final class AppController: ObservableObject {
             case "call_reconnecting": calls.onReconnecting(event)
             case "call_resumed": calls.onResumed(event)
             case "session_revoked":
-                signedOut(reason: "Tu cuenta se abrió en otro dispositivo")
+                signedOut(reason: String(localized: "Tu cuenta se abrió en otro dispositivo"))
             case "friend_request":
-                notice = .info("Nueva solicitud de contacto")
+                notice = .info(String(localized: "Nueva solicitud de contacto"))
                 await reload()
             case "friend_accepted":
-                notice = .info("Aceptaron tu solicitud de contacto")
+                notice = .info(String(localized: "Aceptaron tu solicitud de contacto"))
                 await reload()
             case "key_changed":
-                notice = .info("La llave de un contacto cambió")
+                notice = .info(String(localized: "La llave de un contacto cambió"))
                 await reload()
             case "friend_removed":
                 await reload()
@@ -347,11 +352,14 @@ final class AppController: ObservableObject {
         blocked = reply.strings("blocked")
     }
 
-    /// Adds what only this phone knows: the names the user gave.
+    /// Adds what only this phone knows: the names the user gave and the in-person verification.
     private func decorate(_ list: [Friend]) -> [Friend] {
         list.map { friend in
             var friend = friend
             friend.alias = store.aliases[friend.id]
+            let psk = verifiedPsk(friend.id)
+            friend.verified = psk != nil
+            friend.verifyCode = psk.map(Verification.code(psk:))
             return friend
         }
         .sorted { $0.displayName.lowercased() < $1.displayName.lowercased() }
@@ -435,7 +443,7 @@ final class AppController: ObservableObject {
                 "password": .string(current),
                 "new_password": .string(new),
             ])
-            notice = .info("Contraseña cambiada")
+            notice = .info(String(localized: "Contraseña cambiada"))
         }
     }
 
@@ -468,9 +476,26 @@ final class AppController: ObservableObject {
         act { [self] in
             let reply = try await server.call("friend_request", ["user_id": .string(id)])
             try await refreshContacts()
-            notice = .info(reply.string("status") == "friends" ? "Ahora son contactos" : "Solicitud enviada")
+            notice = .info(reply.string("status") == "friends"
+                           ? String(localized: "Ahora son contactos") : String(localized: "Solicitud enviada"))
         }
     }
+
+    /// An invite link (https://call.l8.nz/a/<id> or kalloq://add/<id>) or a scanned contact QR:
+    /// ask before sending the request, since anyone can make such a link.
+    func openInvite(_ input: String) {
+        guard !input.hasPrefix("kalloq-verify:"), let id = parseFriendId(input) else {
+            notice = .error("invalid_id")
+            return
+        }
+        guard id != myId else {
+            notice = .error("self")
+            return
+        }
+        pendingInvite = id
+    }
+
+    func closeInvite() { pendingInvite = nil }
 
     func respond(_ id: String, accept: Bool) {
         act { [self] in
@@ -511,6 +536,7 @@ final class AppController: ObservableObject {
     func trustKey(_ id: String) {
         guard let ik = friends.first(where: { $0.id == id })?.ik else { return }
         store.setPin(id, ik)
+        store.setVerification(id, nil)  // the QR verification was for the old key
         friends = decorate(friends.map { friend in
             guard friend.id == id else { return friend }
             var friend = friend
@@ -518,6 +544,53 @@ final class AppController: ObservableObject {
             friend.pinned = ik
             return friend
         })
+    }
+
+    // ---------------------------------------------------------------- in-person verification
+
+    /// The PSK from scanning each other's QR, while it is still for the key we have pinned.
+    private func verifiedPsk(_ id: String) -> Data? {
+        guard let record = store.verifications[id], record.ik == store.pins[id] else { return nil }
+        return record.psk.flatMap(Base64URL.decode)
+    }
+
+    /// Our QR for verifying this contact. Its random value is kept until the verification is reset,
+    /// so it does not matter who scans first.
+    func verifyQrText(_ id: String) -> String? {
+        guard let pinned = store.pins[id], let seed = store.identitySeed, let myId = store.userId,
+              let ik = try? Identity.publicKey(seed: seed) else { return nil }
+        var record = store.verifications[id]
+        if record?.ik != pinned {
+            record = Store.VerifyRecord(ik: pinned, rSelf: Base64URL.encode(Verification.newRandom()))
+            store.setVerification(id, record)
+        }
+        guard let rSelf = record.flatMap({ Base64URL.decode($0.rSelf) }) else { return nil }
+        return Verification.encode(userId: myId, ik: ik, r: rSelf)
+    }
+
+    /// The user scanned this contact's verification QR.
+    func scanVerify(_ id: String, _ text: String) {
+        guard let friend = friends.first(where: { $0.id == id }) else { return }
+        guard let code = Verification.decode(text), let seed = store.identitySeed,
+              let pinned = friend.pinned.flatMap(Base64URL.decode) else { return notice = .error("verify_invalid") }
+        guard code.userId == id else { return notice = .error("verify_other") }
+        guard !friend.keyChanged, code.ik == pinned else { return notice = .error("verify_key") }
+        _ = verifyQrText(id)  // makes sure our random value exists
+        guard var record = store.verifications[id], let rSelf = Base64URL.decode(record.rSelf),
+              let myIk = try? Identity.publicKey(seed: seed),
+              let psk = try? Verification.psk(mySeed: seed, myIk: myIk, myR: rSelf, peerIk: code.ik, peerR: code.r)
+        else { return notice = .error("verify_invalid") }
+        record.rOther = Base64URL.encode(code.r)
+        record.psk = Base64URL.encode(psk)
+        store.setVerification(id, record)
+        friends = decorate(friends)
+        notice = .info(String(localized: "Código escaneado. Comprueben que los dos teléfonos muestran el mismo código."))
+    }
+
+    /// Back to the automatic (TOFU) key; a new QR value is generated next time.
+    func resetVerification(_ id: String) {
+        store.setVerification(id, nil)
+        friends = decorate(friends)
     }
 }
 
@@ -534,6 +607,6 @@ extension AppController: CallContext {
               let pinned = store.pins[friendId],
               let peerIk = Base64URL.decode(pinned),
               let seed = store.identitySeed else { return nil }
-        return CallKeys(seed: seed, peerIk: peerIk, psk: nil)
+        return CallKeys(seed: seed, peerIk: peerIk, psk: verifiedPsk(friendId))
     }
 }

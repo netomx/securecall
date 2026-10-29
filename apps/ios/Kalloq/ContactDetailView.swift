@@ -42,7 +42,7 @@ struct ContactDetailView: View {
                         HStack {
                             Text("Nombre del contacto")
                             Spacer()
-                            Text(friend.alias ?? "Sin nombre")
+                            (friend.alias.map { Text($0) } ?? Text("Sin nombre"))
                                 .foregroundStyle(friend.alias == nil ? .secondary : .primary)
                         }
                     }
@@ -58,13 +58,27 @@ struct ContactDetailView: View {
                 }
 
                 Section {
-                    Text(friend.fingerprint ?? "Sin llave todavía")
+                    (friend.fingerprint.map { Text($0) } ?? Text("Sin llave todavía"))
                         .font(.system(.footnote, design: .monospaced))
                         .textSelection(.enabled)
                 } header: {
                     Text("Huella de la llave")
                 } footer: {
-                    Text("Compárala en persona con tu contacto. La verificación por QR llega en un paso posterior.")
+                    Text("Compárala en persona con tu contacto o, mejor, verifiquen sus QR abajo.")
+                }
+
+                Section {
+                    NavigationLink {
+                        VerifyView(id: id)
+                    } label: {
+                        Label(friend.verified ? "Verificado en persona" : "Verificar con QR",
+                              systemImage: friend.verified ? "checkmark.shield.fill" : "qrcode")
+                    }
+                    .disabled(friend.keyChanged || friend.pinned == nil)
+                } footer: {
+                    Text(friend.verified
+                         ? "Verificado en persona. Las llamadas usan además una llave que solo conocen sus dos teléfonos."
+                         : "Sin verificar: las llamadas usan la llave recibida automáticamente.")
                 }
 
                 Section {

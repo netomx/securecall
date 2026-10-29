@@ -103,8 +103,8 @@ enum Validation {
 }
 
 struct Field<Content: View>: View {
-    let title: String
-    var hint: String?
+    let title: LocalizedStringKey
+    var hint: LocalizedStringKey?
     @ViewBuilder let content: Content
 
     var body: some View {
@@ -124,7 +124,7 @@ struct Field<Content: View>: View {
 struct PasswordField: View {
     @Binding var text: String
     @Binding var visible: Bool
-    let placeholder: String
+    let placeholder: LocalizedStringKey
 
     var body: some View {
         HStack {
@@ -146,7 +146,7 @@ struct PasswordField: View {
             }
             .buttonStyle(.plain)
             .foregroundStyle(.secondary)
-            .accessibilityLabel(visible ? "Ocultar contraseña" : "Mostrar contraseña")
+            .accessibilityLabel(visible ? Text("Ocultar contraseña") : Text("Mostrar contraseña"))
         }
     }
 }

@@ -1,0 +1,12 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["FR6PT93MT7.com.cim.securecall"],
+        "components": [
+          { "/": "/a/*", "comment": "invite link: /a/<user id>" }
+        ]
+      }
+    ]
+  }
+}

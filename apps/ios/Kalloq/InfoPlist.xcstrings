@@ -1,0 +1,38 @@
+{
+  "sourceLanguage": "es",
+  "strings": {
+    "NSCameraUsageDescription": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kalloq uses the camera only to read your contacts' QR codes."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kalloq usa la cámara solo para leer códigos QR de tus contactos."
+          }
+        }
+      }
+    },
+    "NSMicrophoneUsageDescription": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kalloq needs the microphone for your calls."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kalloq necesita el micrófono para tus llamadas."
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

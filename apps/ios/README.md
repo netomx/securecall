@@ -30,14 +30,20 @@ xcodebuild -project Kalloq.xcodeproj -scheme Kalloq \
 | `Kalloq/RecoveryCodeView.swift` | El código de recuperación, que solo se muestra una vez |
 | `Kalloq/ContactsView.swift` | Solicitudes, contactos y estado de la conexión |
 | `Kalloq/ContactDetailView.swift` | Nombre local, ID, huella, aviso de llave cambiada, eliminar y bloquear |
-| `Kalloq/AddContactView.swift` | Tu QR y tu enlace; agregar pegando un ID o enlace |
-| `Kalloq/SettingsView.swift` | Cuenta, seguridad, cerrar sesión y eliminar cuenta |
+| `Kalloq/AddContactView.swift` | Tu QR y tu enlace; agregar escaneando un QR o pegando un ID o enlace |
+| `Kalloq/QRScanner.swift` | Lee un QR con la cámara (AVFoundation), sin guardar imágenes |
+| `Kalloq/VerifyView.swift` | Verificación en persona: mostrar y escanear los QR, código de 9 dígitos |
+| `Kalloq/SettingsView.swift` | Cuenta, idioma, seguridad, cerrar sesión y eliminar cuenta |
+| `Kalloq/Localizable.xcstrings` | Los textos: español como fuente, inglés traducido |
 | `Kalloq/CallEngine.swift` | WebRTC solo audio (Opus, DTLS-SRTP), ICE por goteo, cola de candidatos remotos |
 | `Kalloq/SystemCall.swift` | CallKit: pantalla de llamada del sistema, espera, y el audio que solo arranca en `didActivate` |
 | `Kalloq/CallController.swift` | Una llamada a la vez: handshake Noise, ICE cifrado, silenciar, altavoz, colgar |
 | `Kalloq/CallView.swift` | Pantalla de llamada con el código de seguridad de 6 dígitos |
 | `Kalloq/PushRegistry.swift` | PushKit: token VoIP y el push que despierta la app; la llamada se reporta a CallKit antes de que regrese el delegado |
 | `Kalloq/SelfCheck.swift` | Los vectores de referencia, para comprobarlos desde Ajustes |
+| `Kalloq/Log.swift` | Registros de push y llamadas, sin tokens, IDs ni nombres (Console.app, subsistema `com.cim.securecall`) |
+| `Kalloq-Info.plist` | Lo que los ajustes `INFOPLIST_KEY_` no pueden poner: modos `voip` y `audio`, esquema `kalloq://` |
+| `make-icon.swift` | Dibuja el ícono de 1024 px a partir de `docs/logo/kalloq.svg` |
 
 ## Compatibilidad con Android
 
@@ -72,22 +78,50 @@ xcodebuild -project Kalloq.xcodeproj -scheme Kalloq \
 xcrun devicectl device install app --device <device-id> <ruta>/Kalloq.app
 ```
 
+## Idiomas
+
+La interfaz está en español e inglés. Los textos se escriben en español en el código (`Text("…")`,
+`String(localized: "…")`) y la traducción vive en `Localizable.xcstrings`; los avisos de permisos, en
+`InfoPlist.xcstrings`. Un texto nuevo sin traducir se ve en español también en inglés. Ajustes →
+Idioma elige uno dentro de la app, como en Android; iOS lo aplica la próxima vez que se abre.
+
+## Enlaces de invitación
+
+`https://call.l8.nz/a/<id>` abre la app (Universal Links) si el servidor publica
+`deploy/www/.well-known/apple-app-site-association`; si no, el enlace abre la página del navegador.
+`kalloq://add/<id>` funciona siempre. Los dos, y un QR escaneado, piden confirmar antes de mandar la
+solicitud.
+
+## TestFlight
+
+Necesita la app `com.cim.securecall` creada en App Store Connect (Apps → + → New App).
+
+```bash
+xcodebuild -project Kalloq.xcodeproj -scheme Kalloq -configuration Release \
+  -destination 'generic/platform=iOS' -archivePath build/Kalloq.xcarchive \
+  DEVELOPMENT_TEAM=<TeamID> -allowProvisioningUpdates archive
+xcodebuild -exportArchive -archivePath build/Kalloq.xcarchive \
+  -exportOptionsPlist ExportOptions.plist -allowProvisioningUpdates
+```
+
+La exportación sube la compilación con número de build nuevo y cambia el push a producción: esa
+compilación manda `platform: "apns"` en `set_push`. App Store Connect pregunta por el cifrado de
+exportación al publicar la primera compilación.
+
 ## Estado
 
-Hechos los pasos 1 a 3 de `IOS_ARRANQUE.md`: proyecto, capa de cifrado, cliente del protocolo,
-pantallas de cuenta y contactos, y la llamada de voz con WebRTC y CallKit. Del paso 4 está el código
-de los dos lados (PushKit aquí, APNs en `sc-server`), pero **falta probarlo**: necesita la llave
-APNs en el servidor (ver `deploy/README.md`) y un iPhone, porque el simulador no recibe pushes VoIP.
-Falta el paso 5: Universal Links, verificación por QR, ES/EN y TestFlight.
+Hechos los pasos 1 a 4 de `IOS_ARRANQUE.md`, probados en un iPhone 15 Pro contra producción y
+Android 0.7.0: llamadas en los dos sentidos y con la app cerrada (push VoIP). Del paso 5 está el
+código de la verificación por QR, los enlaces de invitación, el inglés y el ícono; falta probar la
+verificación contra Android, publicar `apple-app-site-association` y subir a TestFlight.
 
 Cómo funciona el push: el aviso no dice quién llama, así que al llegar la app hace sonar en CallKit
 una llamada genérica "Kalloq", se reconecta, y le pone nombre cuando llega `call_incoming`. Si la
 persona contesta o cuelga antes, se recuerda y se aplica al llegar la oferta; si en 20 s no llega,
 deja de sonar.
 
-Pendientes conocidos dentro de lo ya hecho: leer el QR con la cámara (se agrega junto con la
-verificación en persona), los textos en inglés (toda la interfaz está en español por ahora), y el
-indicador de calidad de la llamada (el RTT que Android muestra).
+Pendiente conocido dentro de lo ya hecho: el indicador de calidad de la llamada (el RTT que
+Android muestra).
 
 **El simulador no tiene telefonía:** CallKit resetea su proveedor en cuanto se reporta una llamada
 entrante, así que la app se queda con la llamada en su propia pantalla y arranca el audio ella misma

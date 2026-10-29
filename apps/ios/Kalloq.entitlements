@@ -6,5 +6,10 @@
 	     App Store turns it into "production". -->
 	<key>aps-environment</key>
 	<string>development</string>
+	<!-- Universal Links: https://call.l8.nz/a/<id> opens the app (deploy/www/.well-known/apple-app-site-association). -->
+	<key>com.apple.developer.associated-domains</key>
+	<array>
+		<string>applinks:call.l8.nz</string>
+	</array>
 </dict>
 </plist>

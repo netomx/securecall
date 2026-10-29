@@ -1,0 +1,1836 @@
+{
+  "sourceLanguage": "es",
+  "strings": {
+    "%@ está en otra llamada": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ is on another call"
+          }
+        }
+      }
+    },
+    "1. Que %@ escanee este código con su Kalloq (Contactos → tu nombre → Verificar con QR).": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1. Let %@ scan this code with their Kalloq (Contacts → your name → Verify with QR)."
+          }
+        }
+      }
+    },
+    "2. Escanea el código en el teléfono de %@.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "2. Scan the code on %@'s phone."
+          }
+        }
+      }
+    },
+    "6–32 caracteres: a–z, 0–9, _ y . — solo tú lo ves": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "6–32 characters: a–z, 0–9, _ and . — only you see it"
+          }
+        }
+      }
+    },
+    "Abrir Ajustes": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Settings"
+          }
+        }
+      }
+    },
+    "Aceptar": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accept"
+          }
+        }
+      }
+    },
+    "Aceptaron tu solicitud de contacto": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Contact request accepted"
+          }
+        }
+      }
+    },
+    "Acerca de": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "About"
+          }
+        }
+      }
+    },
+    "Activar micrófono": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unmute"
+          }
+        }
+      }
+    },
+    "Agregar contacto": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add contact"
+          }
+        }
+      }
+    },
+    "Ahora son contactos": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You are now contacts"
+          }
+        }
+      }
+    },
+    "Ajustes": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Settings"
+          }
+        }
+      }
+    },
+    "Algo salió mal (%@)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Something went wrong (%@)"
+          }
+        }
+      }
+    },
+    "Algún valor no coincide con Android. Revisa KalloqCore antes de seguir.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A value does not match Android. Check KalloqCore before going on."
+          }
+        }
+      }
+    },
+    "Altavoz": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Speaker"
+          }
+        }
+      }
+    },
+    "Apunta al QR de verificación en el teléfono de tu contacto": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Point at the verification QR on your contact's phone"
+          }
+        }
+      }
+    },
+    "Apunta al código QR de Kalloq de tu contacto": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Point at your contact's Kalloq QR code"
+          }
+        }
+      }
+    },
+    "Atrás": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Back"
+          }
+        }
+      }
+    },
+    "Aún no tienes contactos. Comparte tu código QR o escanea el de otra persona.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You have no contacts yet. Share your QR code or scan someone else's."
+          }
+        }
+      }
+    },
+    "Bloquear": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Block"
+          }
+        }
+      }
+    },
+    "Bloqueaste a este usuario": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You blocked this user"
+          }
+        }
+      }
+    },
+    "Cambiar contraseña": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change password"
+          }
+        }
+      }
+    },
+    "Cambiar nombre": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rename"
+          }
+        }
+      }
+    },
+    "Cancelar": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
+          }
+        }
+      }
+    },
+    "Cerrar sesión": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Log out"
+          }
+        }
+      }
+    },
+    "Cifrada de extremo a extremo": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "End-to-end encrypted"
+          }
+        }
+      }
+    },
+    "Cifrada y verificada": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Encrypted and verified"
+          }
+        }
+      }
+    },
+    "Coinciden con los de Android y tools/kalloq_crypto.py.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "They match Android and tools/kalloq_crypto.py."
+          }
+        }
+      }
+    },
+    "Colgar": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hang up"
+          }
+        }
+      }
+    },
+    "Compartir": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share"
+          }
+        }
+      }
+    },
+    "Comprobación de cifrado": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Encryption check"
+          }
+        }
+      }
+    },
+    "Compárala en persona con tu contacto o, mejor, verifiquen sus QR abajo.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compare it with your contact in person, or better, verify each other's QR below."
+          }
+        }
+      }
+    },
+    "Con la app cerrada": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "With the app closed"
+          }
+        }
+      }
+    },
+    "Conectado": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connected"
+          }
+        }
+      }
+    },
+    "Conectando…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connecting…"
+          }
+        }
+      }
+    },
+    "Confiar en la nueva llave": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trust new key"
+          }
+        }
+      }
+    },
+    "Confirmar": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Confirm"
+          }
+        }
+      }
+    },
+    "Confirmar contraseña": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Confirm password"
+          }
+        }
+      }
+    },
+    "Contactos": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Contacts"
+          }
+        }
+      }
+    },
+    "Contestar": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Answer"
+          }
+        }
+      }
+    },
+    "Continuar": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue"
+          }
+        }
+      }
+    },
+    "Contraseña": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Password"
+          }
+        }
+      }
+    },
+    "Contraseña actual": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Current password"
+          }
+        }
+      }
+    },
+    "Contraseña cambiada": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Password changed"
+          }
+        }
+      }
+    },
+    "Conversión a X25519": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conversion to X25519"
+          }
+        }
+      }
+    },
+    "Copiado": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copied"
+          }
+        }
+      }
+    },
+    "Copiar": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy"
+          }
+        }
+      }
+    },
+    "Crear cuenta": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create account"
+          }
+        }
+      }
+    },
+    "Cuenta": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Account"
+          }
+        }
+      }
+    },
+    "Código de recuperación": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recovery code"
+          }
+        }
+      }
+    },
+    "Código de seguridad": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Security code"
+          }
+        }
+      }
+    },
+    "Código de seguridad de la llamada": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Call security code"
+          }
+        }
+      }
+    },
+    "Código de verificación": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verification code"
+          }
+        }
+      }
+    },
+    "Código escaneado. Comprueben que los dos teléfonos muestran el mismo código.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Code scanned. Check that both phones show the same code."
+          }
+        }
+      }
+    },
+    "Deja que tu contacto escanee este código o comparte tu enlace.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Let your contact scan this code, or share your link."
+          }
+        }
+      }
+    },
+    "Demasiados intentos, espera unos minutos": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Too many attempts, wait a few minutes"
+          }
+        }
+      }
+    },
+    "Desbloquear": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unblock"
+          }
+        }
+      }
+    },
+    "Dilo en voz alta: si coincide en los dos teléfonos, nadie está en medio.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Say it out loud: if it matches on both phones, nobody is in the middle."
+          }
+        }
+      }
+    },
+    "El código anterior deja de servir.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The previous code stops working."
+          }
+        }
+      }
+    },
+    "El código de 8 grupos que te dimos al crear la cuenta. Los guiones y las mayúsculas no importan.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The 8-group code you got when you created the account. Dashes and capitals do not matter."
+          }
+        }
+      }
+    },
+    "El idioma cambia la próxima vez que abras Kalloq.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The language changes the next time you open Kalloq."
+          }
+        }
+      }
+    },
+    "El servidor está ocupado, intenta de nuevo": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The server is busy, try again"
+          }
+        }
+      }
+    },
+    "Eliminar": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete"
+          }
+        }
+      }
+    },
+    "Eliminar contacto": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove contact"
+          }
+        }
+      }
+    },
+    "Eliminar cuenta": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete account"
+          }
+        }
+      }
+    },
+    "Empezar de nuevo": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start again"
+          }
+        }
+      }
+    },
+    "En espera por otra llamada": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On hold for another call"
+          }
+        }
+      }
+    },
+    "Entendido": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OK"
+          }
+        }
+      }
+    },
+    "Enviar solicitud": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send request"
+          }
+        }
+      }
+    },
+    "Error al ejecutar los vectores": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Error running the vectors"
+          }
+        }
+      }
+    },
+    "Es la única forma de recuperar tu cuenta si olvidas la contraseña. Solo se muestra una vez: anótalo y guárdalo en un lugar seguro.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It is the only way to get your account back if you forget your password. It is shown only once: write it down and keep it somewhere safe."
+          }
+        }
+      }
+    },
+    "Escanea su código o pega el ID o el enlace que te pasaron.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scan their code, or paste the ID or link they sent you."
+          }
+        }
+      }
+    },
+    "Escanear código QR": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scan a QR code"
+          }
+        }
+      }
+    },
+    "Escanear su código": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scan their code"
+          }
+        }
+      }
+    },
+    "Ese contacto no está disponible": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That contact is not available"
+          }
+        }
+      }
+    },
+    "Ese código es de otro contacto": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That code belongs to another contact"
+          }
+        }
+      }
+    },
+    "Ese es tu propio ID": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That is your own ID"
+          }
+        }
+      }
+    },
+    "Ese no es un código de verificación de Kalloq": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That is not a Kalloq verification code"
+          }
+        }
+      }
+    },
+    "Ese usuario ya existe": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That username is taken"
+          }
+        }
+      }
+    },
+    "Eso no es un ID de Kalloq válido": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That is not a valid Kalloq ID"
+          }
+        }
+      }
+    },
+    "Este contacto todavía no publicó su llave.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This contact has not published their key yet."
+          }
+        }
+      }
+    },
+    "Este contacto ya no está en tu lista.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This contact is no longer in your list."
+          }
+        }
+      }
+    },
+    "Este teléfono todavía no puede recibir llamadas con Kalloq cerrada.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This phone cannot get calls with Kalloq closed yet."
+          }
+        }
+      }
+    },
+    "Está en otra llamada": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Busy on another call"
+          }
+        }
+      }
+    },
+    "Falló una llamada porque su verificación por QR con ese contacto no coincide. Verifiquen de nuevo.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A call failed because your QR verification with that contact does not match. Verify again."
+          }
+        }
+      }
+    },
+    "Guarda tu código de recuperación": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save your recovery code"
+          }
+        }
+      }
+    },
+    "Guardar": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save"
+          }
+        }
+      }
+    },
+    "Hash del handshake": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Handshake hash"
+          }
+        }
+      }
+    },
+    "Huella de la llave": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Key fingerprint"
+          }
+        }
+      }
+    },
+    "ID": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ID"
+          }
+        }
+      }
+    },
+    "ID o enlace de tu contacto": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Contact ID or link"
+          }
+        }
+      }
+    },
+    "Idioma": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Language"
+          }
+        }
+      }
+    },
+    "Iniciar sesión": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Log in"
+          }
+        }
+      }
+    },
+    "Kalloq": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kalloq"
+          }
+        }
+      }
+    },
+    "Kalloq necesita la cámara para leer el código QR.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kalloq needs the camera to read the QR code."
+          }
+        }
+      }
+    },
+    "Kalloq necesita permiso para usar el micrófono": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kalloq needs the microphone to call"
+          }
+        }
+      }
+    },
+    "La contraseña necesita al menos 10 caracteres": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The password needs at least 10 characters"
+          }
+        }
+      }
+    },
+    "La llave de ese código no coincide con la que tienes para este contacto": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The key in that code does not match the one you have for this contact"
+          }
+        }
+      }
+    },
+    "La llave de este contacto cambió": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This contact's key changed"
+          }
+        }
+      }
+    },
+    "La llave de este contacto cambió: confírmala antes de llamar": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This contact's key changed: confirm it before calling"
+          }
+        }
+      }
+    },
+    "La llave de un contacto cambió": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A contact's key changed"
+          }
+        }
+      }
+    },
+    "La sesión expiró, inicia sesión de nuevo": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Session expired, log in again"
+          }
+        }
+      }
+    },
+    "Listo": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Done"
+          }
+        }
+      }
+    },
+    "Llamada entrante": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Incoming call"
+          }
+        }
+      }
+    },
+    "Llamada rechazada": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Call declined"
+          }
+        }
+      }
+    },
+    "Llamada terminada": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Call ended"
+          }
+        }
+      }
+    },
+    "Llamadas de voz privadas, cifradas de extremo a extremo": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Private voice calls, end-to-end encrypted"
+          }
+        }
+      }
+    },
+    "Llamando…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Calling…"
+          }
+        }
+      }
+    },
+    "Llamar": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Call"
+          }
+        }
+      }
+    },
+    "Llave de identidad Ed25519": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ed25519 identity key"
+          }
+        }
+      }
+    },
+    "Lo guardé en un lugar seguro": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I saved it somewhere safe"
+          }
+        }
+      }
+    },
+    "Los dos teléfonos deben mostrar este código:": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Both phones must show this code:"
+          }
+        }
+      }
+    },
+    "Mi ID": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "My ID"
+          }
+        }
+      }
+    },
+    "Mostrar contraseña": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show password"
+          }
+        }
+      }
+    },
+    "Muestra este código solo en persona: no envíes una foto de él.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show this code only in person: do not send a photo of it."
+          }
+        }
+      }
+    },
+    "Mínimo 10 caracteres": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "At least 10 characters"
+          }
+        }
+      }
+    },
+    "Ninguno": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "None"
+          }
+        }
+      }
+    },
+    "No coinciden": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "They don't match"
+          }
+        }
+      }
+    },
+    "No está disponible": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not connected right now"
+          }
+        }
+      }
+    },
+    "No se pudo": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not do it"
+          }
+        }
+      }
+    },
+    "No se pudo cifrar la llamada": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not encrypt the call"
+          }
+        }
+      }
+    },
+    "No se pudo cifrar la llamada con este contacto": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not encrypt the call with this contact"
+          }
+        }
+      }
+    },
+    "No se pudo conectar el audio": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not connect the audio"
+          }
+        }
+      }
+    },
+    "No se puede conectar al servidor": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Can't reach the server"
+          }
+        }
+      }
+    },
+    "No se puede leer tu llave de identidad guardada": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your saved identity key cannot be read"
+          }
+        }
+      }
+    },
+    "No se puede llamar hasta confirmar la llave nueva.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can't call until you confirm the new key."
+          }
+        }
+      }
+    },
+    "Nombre del contacto": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Contact name"
+          }
+        }
+      }
+    },
+    "Nueva contraseña": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New password"
+          }
+        }
+      }
+    },
+    "Nueva solicitud de contacto": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New contact request"
+          }
+        }
+      }
+    },
+    "Nuevo ID": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New ID"
+          }
+        }
+      }
+    },
+    "Nuevo código de recuperación": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New recovery code"
+          }
+        }
+      }
+    },
+    "Ocultar contraseña": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hide password"
+          }
+        }
+      }
+    },
+    "Oferta cifrada (Noise mensaje 1)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Encrypted offer (Noise message 1)"
+          }
+        }
+      }
+    },
+    "PSK de verificación por QR": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "QR verification PSK"
+          }
+        }
+      }
+    },
+    "Predeterminado del sistema": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "System default"
+          }
+        }
+      }
+    },
+    "Puede ser un teléfono nuevo o alguien intentando interceptarte. Confírmalo con tu contacto antes de confiar en ella.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It may be a new phone, or someone trying to intercept you. Confirm with your contact before trusting it."
+          }
+        }
+      }
+    },
+    "Quitar verificación": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove verification"
+          }
+        }
+      }
+    },
+    "Reanudar": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resume"
+          }
+        }
+      }
+    },
+    "Rechazar": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Decline"
+          }
+        }
+      }
+    },
+    "Recibir llamadas": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Receiving calls"
+          }
+        }
+      }
+    },
+    "Reconectando…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reconnecting…"
+          }
+        }
+      }
+    },
+    "Recuperar": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recover"
+          }
+        }
+      }
+    },
+    "Recuperar cuenta": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recover account"
+          }
+        }
+      }
+    },
+    "Respuesta descifrada": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Decrypted answer"
+          }
+        }
+      }
+    },
+    "Se perdió la conexión": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connection lost"
+          }
+        }
+      }
+    },
+    "Seguridad": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Security"
+          }
+        }
+      }
+    },
+    "Servidor": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Server"
+          }
+        }
+      }
+    },
+    "Si es distinto, alguno escaneó un código viejo: toquen Empezar de nuevo en ambos teléfonos.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "If it is different, one of you scanned an old code: tap Start again on both phones."
+          }
+        }
+      }
+    },
+    "Silenciar": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mute"
+          }
+        }
+      }
+    },
+    "Sin conexión": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Offline"
+          }
+        }
+      }
+    },
+    "Sin llave todavía": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No key yet"
+          }
+        }
+      }
+    },
+    "Sin nombre": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No name"
+          }
+        }
+      }
+    },
+    "Sin permiso para el micrófono": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No microphone permission"
+          }
+        }
+      }
+    },
+    "Sin respuesta": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No answer"
+          }
+        }
+      }
+    },
+    "Sin verificar: las llamadas usan la llave recibida automáticamente.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not verified: calls use the key received automatically."
+          }
+        }
+      }
+    },
+    "Solicitud enviada": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Request sent"
+          }
+        }
+      }
+    },
+    "Solicitudes de contacto": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Contact requests"
+          }
+        }
+      }
+    },
+    "Solicitudes enviadas": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sent requests"
+          }
+        }
+      }
+    },
+    "Solo con la app abierta": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only with the app open"
+          }
+        }
+      }
+    },
+    "Solo se guarda en este teléfono.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only stored on this phone."
+          }
+        }
+      }
+    },
+    "Tu cuenta se abrió en otro dispositivo": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your account was opened on another device"
+          }
+        }
+      }
+    },
+    "Tu cuenta y tu lista de contactos se borran del servidor. No se puede deshacer.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your account and contact list are deleted from the server. This cannot be undone."
+          }
+        }
+      }
+    },
+    "Tu código": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your code"
+          }
+        }
+      }
+    },
+    "Tus contactos te conservan, pero quien tenga tu ID o código QR anterior ya no podrá encontrarte.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your contacts keep you, but anyone with your old ID or QR code will no longer be able to find you."
+          }
+        }
+      }
+    },
+    "Usuario": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Username"
+          }
+        }
+      }
+    },
+    "Usuario inválido: 6–32 caracteres, a–z, 0–9, _ y .": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invalid username: 6–32 characters, a–z, 0–9, _ and ."
+          }
+        }
+      }
+    },
+    "Usuario no encontrado": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "User not found"
+          }
+        }
+      }
+    },
+    "Usuario, contraseña o código incorrectos": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wrong username, password or code"
+          }
+        }
+      }
+    },
+    "Usuarios bloqueados": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Blocked users"
+          }
+        }
+      }
+    },
+    "Verificado en persona": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verified in person"
+          }
+        }
+      }
+    },
+    "Verificado en persona. Las llamadas usan además una llave que solo conocen sus dos teléfonos.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verified in person. Calls also use a key that only your two phones know."
+          }
+        }
+      }
+    },
+    "Verificar con QR": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verify with QR"
+          }
+        }
+      }
+    },
+    "Verificar en persona": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verify in person"
+          }
+        }
+      }
+    },
+    "Versión": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Version"
+          }
+        }
+      }
+    },
+    "Ya estás en una llamada": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You are already in a call"
+          }
+        }
+      }
+    },
+    "esperado: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "expected: %@"
+          }
+        }
+      }
+    },
+    "¿Agregar contacto?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add contact?"
+          }
+        }
+      }
+    },
+    "¿Bloquear a este usuario? Ya no podrá enviarte solicitudes.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Block this user? They will no longer be able to send you requests."
+          }
+        }
+      }
+    },
+    "¿Eliminar este contacto?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove this contact?"
+          }
+        }
+      }
+    },
+    "¿Enviar solicitud de contacto a %@?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send a contact request to %@?"
+          }
+        }
+      }
+    },
+    "¿Nuevo ID?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New ID?"
+          }
+        }
+      }
+    },
+    "¿Olvidaste tu contraseña?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Forgot your password?"
+          }
+        }
+      }
+    },
+    "⚠ La llave cambió": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "⚠ Key changed"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

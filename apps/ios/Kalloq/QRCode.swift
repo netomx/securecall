@@ -1,8 +1,7 @@
 import CoreImage.CIFilterBuiltins
 import SwiftUI
 
-/// QR codes are generated with CoreImage; reading them with the camera comes with the in-person
-/// verification screen (step 5 of `docs/IOS_ARRANQUE.md`).
+/// QR codes are generated with CoreImage; `QRScannerSheet` reads them with the camera.
 enum QRCode {
     static func image(_ text: String) -> UIImage? {
         let filter = CIFilter.qrCodeGenerator()

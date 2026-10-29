@@ -38,33 +38,33 @@ enum SelfCheck {
             let qrPsk = try Verification.psk(mySeed: seedA, myIk: ikA, myR: rA, peerIk: ikB, peerR: rB)
 
             return [
-                Row(name: "Llave de identidad Ed25519",
+                Row(name: String(localized: "Llave de identidad Ed25519"),
                     expected: "03a107bff3ce10be1d70dd18e74bc09967e4d6309ba50d5f1ddc8664125531b8",
                     got: ikA.hex),
-                Row(name: "Conversión a X25519",
+                Row(name: String(localized: "Conversión a X25519"),
                     expected: "4701d08488451f545a409fb58ae3e58581ca40ac3f7f114698cd71deac73ca01",
                     got: try Keys.x25519Public(edPublic: ikA).hex),
-                Row(name: "Oferta cifrada (Noise mensaje 1)",
+                Row(name: String(localized: "Oferta cifrada (Noise mensaje 1)"),
                     expected: "a4e09292b651c278b9772c569f5fa9bb13d906b46ab68c9df9dc2b4409f8a20971ee8a571bc6d710734791bf01ee41a80b42381da5770625263b93100ae3af",
                     got: offer.hex),
-                Row(name: "Respuesta descifrada",
+                Row(name: String(localized: "Respuesta descifrada"),
                     expected: #"{"sdp":"answer"}"#,
                     got: String(decoding: payload, as: UTF8.self)),
-                Row(name: "Hash del handshake",
+                Row(name: String(localized: "Hash del handshake"),
                     expected: "f6737f7a4ffcdb8503f5c54d7b8638e671f53577a9bfd383fb91a8bce6ddee6c",
                     got: a.handshakeHash.hex),
-                Row(name: "Código de seguridad de la llamada",
+                Row(name: String(localized: "Código de seguridad de la llamada"),
                     expected: "251 374",
                     got: CallCrypto.callCode(handshakeHash: a.handshakeHash)),
-                Row(name: "PSK de verificación por QR",
+                Row(name: String(localized: "PSK de verificación por QR"),
                     expected: "d622bb3a4bceb06d229b9f6107d8501e3eb143416d3e4381d2b861ac317e0357",
                     got: qrPsk.hex),
-                Row(name: "Código de verificación",
+                Row(name: String(localized: "Código de verificación"),
                     expected: "327 137 295",
                     got: Verification.code(psk: qrPsk)),
             ]
         } catch {
-            return [Row(name: "Error al ejecutar los vectores", expected: "—", got: "\(error)")]
+            return [Row(name: String(localized: "Error al ejecutar los vectores"), expected: "—", got: "\(error)")]
         }
     }
 

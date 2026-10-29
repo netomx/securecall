@@ -9,5 +9,18 @@
 		<string>audio</string>
 		<string>voip</string>
 	</array>
+	<!-- kalloq://add/<id>, the same scheme as Android; https://call.l8.nz/a/<id> comes through
+	     Associated Domains (Kalloq.entitlements). -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.cim.securecall</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>kalloq</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

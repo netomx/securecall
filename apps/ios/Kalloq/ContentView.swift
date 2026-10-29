@@ -19,6 +19,20 @@ struct ContentView: View {
         }
         .animation(.default, value: app.phase)
         .noticeAlert()
+        // Universal Links (https://call.l8.nz/a/<id>) and kalloq://add/<id>.
+        .onOpenURL { url in app.openInvite(url.absoluteString) }
+        .confirmationDialog("¿Agregar contacto?", isPresented: Binding(
+            get: { app.pendingInvite != nil && app.phase == .loggedIn },
+            set: { if !$0 { app.closeInvite() } }
+        ), titleVisibility: .visible) {
+            Button("Enviar solicitud") {
+                if let id = app.pendingInvite { app.addFriend(id) }
+                app.closeInvite()
+            }
+            Button("Cancelar", role: .cancel) { app.closeInvite() }
+        } message: {
+            Text("¿Enviar solicitud de contacto a \(app.pendingInvite ?? "")?")
+        }
         .fullScreenCover(item: Binding(get: { app.call }, set: { _ in })) { call in
             CallView(call: call)
         }
