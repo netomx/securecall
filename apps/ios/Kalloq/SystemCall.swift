@@ -30,6 +30,8 @@ final class SystemCall: NSObject {
     private var ownsAudioSession = false
     /// True once the system has actually acted on this call (answered, held, ended, started audio).
     private var systemTookTheCall = false
+    /// The system is ringing a call a push announced, whose offer has not arrived yet.
+    private(set) var ringingForPush = false
 
     override init() {
         let config = CXProviderConfiguration()
@@ -52,22 +54,60 @@ final class SystemCall: NSObject {
     /// Someone is calling us: the system rings. Falls back to our own audio if it refuses.
     func reportIncoming(name: String, peerId: String, listener: SystemCallListener) {
         self.listener = listener
+        let update = Self.incomingUpdate(name: name, peerId: peerId)
+        // A push already made the system ring a nameless call: now that we know who it is, fill it in.
+        if ringingForPush, let callUUID {
+            ringingForPush = false
+            provider.reportCall(with: callUUID, updated: update)
+            return
+        }
         systemTookTheCall = false
         let uuid = UUID()
         callUUID = uuid
+        provider.reportNewIncomingCall(with: uuid, update: update) { [weak self] error in
+            guard error != nil, let self else { return }
+            self.callUUID = nil
+            Task { @MainActor [listener = self.listener] in listener?.onSystemUnavailable() }
+        }
+    }
+
+    /**
+     * A VoIP push arrived. iOS demands a CallKit call for every one before the PushKit delegate
+     * returns, or it kills the app and stops delivering pushes — but the push says nothing about
+     * who is calling, on purpose. So the system rings a generic "Kalloq" call right away, and
+     * `reportIncoming` fills it in once the offer arrives over the WebSocket.
+     */
+    func reportPushedCall(listener: SystemCallListener?, completion: @escaping () -> Void) {
+        let update = Self.incomingUpdate(name: "Kalloq", peerId: nil)
+        if let callUUID {
+            // A call is already on screen: reporting it again satisfies iOS and just fails as a duplicate.
+            provider.reportNewIncomingCall(with: callUUID, update: update) { _ in completion() }
+            return
+        }
+        self.listener = listener
+        systemTookTheCall = false
+        ringingForPush = true
+        let uuid = UUID()
+        callUUID = uuid
+        provider.reportNewIncomingCall(with: uuid, update: update) { [weak self] error in
+            if error != nil {
+                self?.callUUID = nil
+                self?.ringingForPush = false
+            }
+            completion()
+        }
+    }
+
+    private static func incomingUpdate(name: String, peerId: String?) -> CXCallUpdate {
         let update = CXCallUpdate()
-        update.remoteHandle = CXHandle(type: .generic, value: peerId)
+        update.remoteHandle = peerId.map { CXHandle(type: .generic, value: $0) }
         update.localizedCallerName = name
         update.hasVideo = false
         update.supportsGrouping = false
         update.supportsUngrouping = false
         update.supportsDTMF = false
         update.supportsHolding = true
-        provider.reportNewIncomingCall(with: uuid, update: update) { [weak self] error in
-            guard error != nil, let self else { return }
-            self.callUUID = nil
-            Task { @MainActor [listener = self.listener] in listener?.onSystemUnavailable() }
-        }
+        return update
     }
 
     /// We are calling someone: tell the system so it knows the phone is busy.
@@ -174,6 +214,7 @@ final class SystemCall: NSObject {
         callUUID = nil
         listener = nil
         systemTookTheCall = false
+        ringingForPush = false
         guard ownsAudioSession else { return }
         ownsAudioSession = false
         let session = RTCAudioSession.sharedInstance()
@@ -213,6 +254,8 @@ extension SystemCall: CXProviderDelegate {
         Task { @MainActor [weak self] in
             self?.listener?.onSystemDisconnect()
             action.fulfill()
+            // The call is gone from the system: forget it, or the next push would look like a duplicate.
+            self?.finish()
         }
     }
 

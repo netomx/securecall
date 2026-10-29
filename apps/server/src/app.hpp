@@ -1,5 +1,6 @@
 #pragma once
 
+#include "apns.hpp"
 #include "config.hpp"
 #include "db.hpp"
 #include "push.hpp"
@@ -71,6 +72,8 @@ private:
     void op_contacts(Request r);
     // Push
     void op_set_push(Request r);
+    bool can_push(const PushToken& t) const;  // the service for that token is configured
+    void send_push(const PushToken& t);
     // Media
     void op_turn(Request r);
     // Calls (signaling relay; SDP and ICE are opaque to the server)
@@ -129,7 +132,8 @@ private:
     Config cfg_;
     Db db_;
     Store store_;
-    Push push_;
+    Push push_;  // FCM (Android)
+    Apns apns_;  // APNs VoIP (iOS)
     boost::asio::thread_pool pool_;
     boost::asio::steady_timer prune_timer_;
     std::unordered_map<std::string, Op> ops_;

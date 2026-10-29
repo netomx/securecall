@@ -32,7 +32,7 @@
   <li><strong>Contraseña y código de recuperación:</strong> solo como hash (Argon2id); nunca los guardamos en texto legible.</li>
   <li><strong>Llave pública de identidad</strong>, para que sus contactos verifiquen que hablan con usted.</li>
   <li><strong>Contactos dentro de Kalloq:</strong> solicitudes pendientes, contactos aceptados y personas bloqueadas, como identificadores de cuenta.</li>
-  <li><strong>Sesión:</strong> un hash del token de inicio de sesión y, si autoriza las notificaciones, el token de Firebase Cloud Messaging del dispositivo.</li>
+  <li><strong>Sesión:</strong> un hash del token de inicio de sesión y el token de push del dispositivo: de Firebase Cloud Messaging en Android (si autoriza las notificaciones) o del servicio de notificaciones de Apple (APNs) en iPhone.</li>
   <li><strong>Datos técnicos de conexión:</strong> la dirección IP con la que se conecta, necesaria para establecer la comunicación.</li>
 </ul>
 <p>No tratamos datos personales sensibles. No recabamos el audio de las llamadas, historial de llamadas, correo, número de teléfono, agenda del teléfono, ubicación, fotografías ni identificadores de publicidad. La aplicación no incluye analítica, rastreadores ni publicidad.</p>
@@ -49,20 +49,20 @@
 <p>No tenemos finalidades secundarias: no usamos sus datos para mercadotecnia, publicidad ni venta de perfiles.</p>
 
 <h2>Qué se queda en su teléfono</h2>
-<p>Su llave privada de identidad, los nombres que asigna a sus contactos y si los verificó se guardan cifrados únicamente en su dispositivo; no los recibimos. La aplicación impide capturas de pantalla.</p>
+<p>Su llave privada de identidad, los nombres que asigna a sus contactos y si los verificó se guardan cifrados únicamente en su dispositivo; no los recibimos. La aplicación de Android impide capturas de pantalla.</p>
 
 <h2>Permisos de la aplicación</h2>
 <ul>
   <li><strong>Micrófono:</strong> solo durante una llamada.</li>
   <li><strong>Notificaciones y pantalla completa:</strong> para avisarle de una llamada entrante, incluso con la pantalla bloqueada.</li>
-  <li><strong>Llamadas del sistema y Bluetooth:</strong> para que Android trate a Kalloq como una llamada (ponerla en espera si entra una llamada telefónica, contestar desde el auto o los audífonos).</li>
+  <li><strong>Llamadas del sistema y Bluetooth:</strong> para que Android o iOS traten a Kalloq como una llamada (ponerla en espera si entra una llamada telefónica, contestar desde el auto o los audífonos).</li>
 </ul>
 
 <h2>Cómo protegemos la información</h2>
 <p>Las conexiones con el servidor usan TLS 1.3. El audio va cifrado de extremo a extremo (DTLS-SRTP, con un intercambio de llaves Noise autenticado por las llaves de identidad de ambos participantes). Cuando no hay conexión directa entre los teléfonos, la llamada pasa por nuestro servidor de retransmisión (TURN), que solo ve datos cifrados que no puede descifrar. El servidor conoce una llamada únicamente mientras está en curso y no guarda con quién habló ni cuánto duró. El código es abierto (AGPL-3.0) y puede revisarse en <a href="https://github.com/netomx/securecall">GitHub</a>. Ningún sistema elimina por completo el riesgo de acceso indebido.</p>
 
 <h2>Con quién se comparte la información</h2>
-<p><strong>Google.</strong> Para despertar su teléfono cuando alguien le llama usamos Firebase Cloud Messaging. El aviso solo indica que hay una llamada; no incluye quién llama ni ningún otro dato. Google trata el token del dispositivo y la distribución de la aplicación por Google Play conforme a su <a href="https://policies.google.com/privacy?hl=es-419">política de privacidad</a>.</p>
+<p><strong>Google y Apple.</strong> Para despertar su teléfono cuando alguien le llama usamos Firebase Cloud Messaging de Google en Android y el servicio de notificaciones de Apple (APNs) en iPhone. El aviso solo indica que hay una llamada; no incluye quién llama ni ningún otro dato. Google trata el token del dispositivo y la distribución de la aplicación por Google Play conforme a su <a href="https://policies.google.com/privacy?hl=es-419">política de privacidad</a>; Apple trata el token de su iPhone conforme a la <a href="https://www.apple.com/mx/legal/privacy/">suya</a>.</p>
 <p><strong>Infraestructura.</strong> Los proveedores que alojan nuestros servidores pueden procesar datos para prestar el servicio; esa infraestructura puede encontrarse fuera de México. No vendemos datos. Si alguna transferencia requiriera su consentimiento, se lo solicitaremos antes; las comunicaciones exigidas por la ley se atenderán dentro de su alcance.</p>
 
 <h2>Durante cuánto tiempo conservamos los datos</h2>
@@ -105,7 +105,7 @@
   <li><strong>Password and recovery code:</strong> only as a hash (Argon2id), never in readable form.</li>
   <li><strong>Public identity key</strong>, so your contacts can verify they are talking to you.</li>
   <li><strong>Contacts within Kalloq:</strong> pending requests, accepted contacts and blocked people, as account identifiers.</li>
-  <li><strong>Session:</strong> a hash of the sign-in token and, if you allow notifications, the device's Firebase Cloud Messaging token.</li>
+  <li><strong>Session:</strong> a hash of the sign-in token and the device's push token: from Firebase Cloud Messaging on Android (if you allow notifications) or from the Apple Push Notification service (APNs) on iPhone.</li>
   <li><strong>Technical connection data:</strong> the IP address you connect from, needed to establish communication.</li>
 </ul>
 <p>We do not process sensitive personal data. We do not collect call audio, call history, email, phone number, your address book, location, photos or advertising identifiers. The app contains no analytics, trackers or ads.</p>
@@ -114,20 +114,20 @@
 <p>Only to provide the service: create and authenticate your account and let you recover it; connect you with your contacts and deliver the public keys that make encryption possible; set up calls and alert you to incoming ones; prevent abuse (usage limits per account and IP address) and keep the service secure; and handle your requests and legal obligations. We have no secondary purposes: no marketing, advertising or profile selling.</p>
 
 <h2>What stays on your phone</h2>
-<p>Your private identity key, the names you give your contacts and whether you verified them are stored encrypted only on your device; we never receive them. The app blocks screenshots.</p>
+<p>Your private identity key, the names you give your contacts and whether you verified them are stored encrypted only on your device; we never receive them. The Android app blocks screenshots.</p>
 
 <h2>App permissions</h2>
 <ul>
   <li><strong>Microphone:</strong> only during a call.</li>
   <li><strong>Notifications and full screen:</strong> to alert you to an incoming call, including on the lock screen.</li>
-  <li><strong>System calls and Bluetooth:</strong> so Android treats Kalloq as a call (holding it when a phone call comes in, answering from the car or headphones).</li>
+  <li><strong>System calls and Bluetooth:</strong> so Android or iOS treats Kalloq as a call (holding it when a phone call comes in, answering from the car or headphones).</li>
 </ul>
 
 <h2>How we protect it</h2>
 <p>Connections to the server use TLS 1.3. Audio is end-to-end encrypted (DTLS-SRTP, with a Noise key exchange authenticated by both participants' identity keys). When phones cannot connect directly, the call goes through our relay (TURN) server, which only sees encrypted data it cannot decrypt. The server only knows about a call while it is in progress and does not keep who you talked to or for how long. The code is open source (AGPL-3.0) on <a href="https://github.com/netomx/securecall">GitHub</a>. No system fully removes the risk of unauthorized access.</p>
 
 <h2>Who we share it with</h2>
-<p><strong>Google.</strong> We use Firebase Cloud Messaging to wake your phone when someone calls. The notice only says there is a call; it does not include who is calling or any other data. Google handles the device token and the distribution of the app through Google Play under its <a href="https://policies.google.com/privacy">privacy policy</a>.</p>
+<p><strong>Google and Apple.</strong> We use Google's Firebase Cloud Messaging on Android and the Apple Push Notification service (APNs) on iPhone to wake your phone when someone calls. The notice only says there is a call; it does not include who is calling or any other data. Google handles the device token and the distribution of the app through Google Play under its <a href="https://policies.google.com/privacy">privacy policy</a>; Apple handles your iPhone's token under <a href="https://www.apple.com/legal/privacy/">its own</a>.</p>
 <p><strong>Infrastructure.</strong> Providers hosting our servers may process data to provide the service; that infrastructure may be located outside Mexico. We do not sell data. If a transfer required your consent we would ask first; disclosures required by law will be handled within their scope.</p>
 
 <h2>How long we keep it</h2>

@@ -27,6 +27,14 @@ struct SettingsView: View {
                     Button("Nuevo ID") { confirmRegenId = true }
                 }
 
+                Section {
+                    LabeledContent("Recibir llamadas", value: app.pushReady ? "Con la app cerrada" : "Solo con la app abierta")
+                } footer: {
+                    if !app.pushReady {
+                        Text("Este teléfono todavía no puede recibir llamadas con Kalloq cerrada.")
+                    }
+                }
+
                 Section("Seguridad") {
                     Button("Cambiar contraseña") {
                         password = ""

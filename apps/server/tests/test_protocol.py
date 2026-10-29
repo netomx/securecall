@@ -373,6 +373,23 @@ async def test_calls():
         await x.close()
 
 
+async def test_push_platforms():
+    """set_push without "platform" is FCM (older Android builds); APNs tokens must be hex."""
+    a = await registered()
+    apns_token = secrets.token_hex(32)
+    await a.ok("set_push", token="fcm-token-" + secrets.token_hex(8))
+    await a.ok("set_push", token="fcm-token-" + secrets.token_hex(8), platform="fcm")
+    await a.ok("set_push", token=apns_token, platform="apns")
+    await a.ok("set_push", token=apns_token.upper(), platform="apns_sandbox")
+    await a.ok("set_push", token="", platform="apns")  # turning push off
+    await a.err("set_push", "bad_request", token=apns_token, platform="webpush")
+    await a.err("set_push", "bad_request", token=apns_token, platform=7)
+    await a.err("set_push", "bad_request", token="../../3/device/" + apns_token, platform="apns")
+    await a.err("set_push", "bad_request", token="abcd", platform="apns")
+    await a.err("set_push", "bad_request", token="ab" * 101, platform="apns")
+    await a.close()
+
+
 async def test_push_wake():
     """Needs the server started with a (test) fcm_credentials_file, so push counts as enabled."""
     a, b = await registered(), await registered()

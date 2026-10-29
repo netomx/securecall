@@ -36,6 +36,7 @@ xcodebuild -project Kalloq.xcodeproj -scheme Kalloq \
 | `Kalloq/SystemCall.swift` | CallKit: pantalla de llamada del sistema, espera, y el audio que solo arranca en `didActivate` |
 | `Kalloq/CallController.swift` | Una llamada a la vez: handshake Noise, ICE cifrado, silenciar, altavoz, colgar |
 | `Kalloq/CallView.swift` | Pantalla de llamada con el código de seguridad de 6 dígitos |
+| `Kalloq/PushRegistry.swift` | PushKit: token VoIP y el push que despierta la app; la llamada se reporta a CallKit antes de que regrese el delegado |
 | `Kalloq/SelfCheck.swift` | Los vectores de referencia, para comprobarlos desde Ajustes |
 
 ## Compatibilidad con Android
@@ -74,8 +75,15 @@ xcrun devicectl device install app --device <device-id> <ruta>/Kalloq.app
 ## Estado
 
 Hechos los pasos 1 a 3 de `IOS_ARRANQUE.md`: proyecto, capa de cifrado, cliente del protocolo,
-pantallas de cuenta y contactos, y la llamada de voz con WebRTC y CallKit. Faltan APNs y PushKit (4)
-y Universal Links, verificación por QR, ES/EN y TestFlight (5).
+pantallas de cuenta y contactos, y la llamada de voz con WebRTC y CallKit. Del paso 4 está el código
+de los dos lados (PushKit aquí, APNs en `sc-server`), pero **falta probarlo**: necesita la llave
+APNs en el servidor (ver `deploy/README.md`) y un iPhone, porque el simulador no recibe pushes VoIP.
+Falta el paso 5: Universal Links, verificación por QR, ES/EN y TestFlight.
+
+Cómo funciona el push: el aviso no dice quién llama, así que al llegar la app hace sonar en CallKit
+una llamada genérica "Kalloq", se reconecta, y le pone nombre cuando llega `call_incoming`. Si la
+persona contesta o cuelga antes, se recuerda y se aplica al llegar la oferta; si en 20 s no llega,
+deja de sonar.
 
 Pendientes conocidos dentro de lo ya hecho: leer el QR con la cámara (se agrega junto con la
 verificación en persona), los textos en inglés (toda la interfaz está en español por ahora), y el

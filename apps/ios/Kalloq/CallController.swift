@@ -52,6 +52,8 @@ final class CallController: ObservableObject {
     private static let ringLimit: TimeInterval = 50
     /// How long a call waits with the audio path down before it is given up.
     private static let reconnectLimit: TimeInterval = 20
+    /// After a push, how long to wait for the offer before the system stops ringing.
+    private static let pushWaitLimit: TimeInterval = 20
 
     @Published private(set) var call: CallUi?
 
@@ -72,10 +74,53 @@ final class CallController: ObservableObject {
     private var mediaRestart: Task<Void, Never>?
     private var mediaDown = false
 
+    private var pushRegistry: PushRegistry?
+    private var pushWait: Task<Void, Never>?
+    // What the user did on the system's screen while it rang for a push, before the offer arrived.
+    private var answerWhenOfferArrives = false
+    private var declineWhenOfferArrives = false
+
+    /// This phone's VoIP push token (hex), once iOS hands it over.
+    private(set) var pushToken: String?
+    var onPushToken: ((String?) -> Void)?
+    /// A push said someone is calling: the session should reconnect now so the offer can arrive.
+    var onPushArrived: (() -> Void)?
+
     init(server: ServerClient, store: Store, context: CallContext) {
         self.server = server
         self.store = store
         self.context = context
+        pushRegistry = PushRegistry(systemCall: systemCall, listener: self,
+                                    onToken: { [weak self] token in
+                                        self?.pushToken = token
+                                        self?.onPushToken?(token)
+                                    },
+                                    onPush: { [weak self] in self?.pushArrived() })
+    }
+
+    /**
+     * The system is already ringing a nameless call (`SystemCall.reportPushedCall`). Reconnect so
+     * the server can hand over the offer, and stop the ringing if it never comes: the caller gave
+     * up, or this phone cannot get through.
+     */
+    private func pushArrived() {
+        onPushArrived?()
+        guard call == nil else { return }
+        pushWait?.cancel()
+        pushWait = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: UInt64(Self.pushWaitLimit * 1_000_000_000))
+            guard let self, self.call == nil else { return }
+            self.answerWhenOfferArrives = false
+            self.declineWhenOfferArrives = false
+            if self.systemCall.ringingForPush { self.systemCall.reportEnded(.remoteEnded) }
+        }
+    }
+
+    /// An incoming call was refused before it rang in our screen: if a push made the system ring for
+    /// it, that ringing has to stop too.
+    private func stopPushedRinging() {
+        answerWhenOfferArrives = false
+        if call == nil, systemCall.ringingForPush { systemCall.reportEnded(.failed) }
     }
 
     // ---------------------------------------------------------------- outgoing
@@ -130,37 +175,33 @@ final class CallController: ObservableObject {
             reject(callId)
             return
         }
-        // Only a call made with the identity key we pinned for this contact decrypts.
-        guard let keys = context?.callKeys(for: from) else {
+        let refuse = { [self] (notice: String?) in
             reject(callId)
-            context?.show(.error("key_changed"))
-            return
+            stopPushedRinging()
+            if let notice { context?.show(.error(notice)) }
         }
+        if declineWhenOfferArrives {
+            // Declined on the system's screen while it rang for the push, before we knew who it was.
+            declineWhenOfferArrives = false
+            return refuse(nil)
+        }
+        // Only a call made with the identity key we pinned for this contact decrypts.
+        guard let keys = context?.callKeys(for: from) else { return refuse("key_changed") }
         guard let raw = event.string("msg").flatMap(Base64URL.decode),
               let handshake = try? CallCrypto.handshake(initiator: false, mySeed: keys.seed,
                                                         peerIk: keys.peerIk, psk: keys.psk, callId: callId),
               let opened = try? handshake.readOffer(raw),
               let offer = JSONValue.parse(String(decoding: opened, as: UTF8.self)),
-              let sdp = offer.string("sdp") else {
-            reject(callId)
-            context?.show(.error("e2e_failed"))
-            return
-        }
-        guard offer.string("psk") == CallCrypto.pskId(keys.psk) else {
-            reject(callId)
-            context?.show(.error("verify_mismatch"))
-            return
-        }
+              let sdp = offer.string("sdp") else { return refuse("e2e_failed") }
+        guard offer.string("psk") == CallCrypto.pskId(keys.psk) else { return refuse("verify_mismatch") }
         // The server could replay a call it relayed before: it decrypts, but must not ring again.
         let sentAt = offer["ts"]?.doubleValue.map { $0 / 1000 }
         guard let sentAt, abs(Date().timeIntervalSince1970 - sentAt) <= Self.offerMaxAge,
-              !store.callSeen(callId) else {
-            reject(callId)
-            return
-        }
+              !store.callSeen(callId) else { return refuse(nil) }
 
         pendingOffer = sdp
         self.handshake = handshake
+        pushWait?.cancel()
         call = CallUi(callId: callId, peerId: from, outgoing: false, phase: .incoming,
                       verified: keys.psk != nil)
         systemCall.reportIncoming(name: context?.displayName(from) ?? from, peerId: from, listener: self)
@@ -169,6 +210,11 @@ final class CallController: ObservableObject {
             guard let self, self.call?.callId == callId, self.call?.phase == .incoming else { return }
             self.reject(callId)
             self.finish("timeout")
+        }
+        if answerWhenOfferArrives {
+            // Answered on the system's screen before the offer was here: pick up now.
+            answerWhenOfferArrives = false
+            accept()
         }
     }
 
@@ -481,10 +527,23 @@ extension CallController: CallEngineListener {
 }
 
 extension CallController: SystemCallListener {
-    func onSystemAnswer() { accept() }
+    func onSystemAnswer() {
+        if call == nil, systemCall.ringingForPush {
+            answerWhenOfferArrives = true  // the push rang and the user picked up before the offer arrived
+            return
+        }
+        accept()
+    }
 
     func onSystemDisconnect() {
-        guard let current = call, current.phase != .ended else { return }
+        guard let current = call, current.phase != .ended else {
+            if systemCall.ringingForPush {
+                // Declined on the system's screen before the offer arrived: refuse it when it does.
+                declineWhenOfferArrives = true
+                answerWhenOfferArrives = false
+            }
+            return
+        }
         let callId = current.callId
         if current.phase == .incoming {
             reject(callId)

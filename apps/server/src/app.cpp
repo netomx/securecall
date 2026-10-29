@@ -85,6 +85,7 @@ App::App(asio::io_context& ioc, Config cfg)
       db_(cfg_.db_path),
       store_(db_),
       push_(ioc, cfg_.fcm_credentials_file, [this](const std::string& token) { store_.clear_push_token(token); }),
+      apns_(ioc, cfg_, [this](const std::string& token) { store_.clear_push_token(token); }),
       pool_(static_cast<std::size_t>(cfg_.hash_threads)),
       prune_timer_(ioc),
       ip_auth_(20, 1.0 / 30, cfg_.rate_limits),
@@ -582,10 +583,29 @@ void App::op_turn(Request r) {
 // Push
 
 void App::op_set_push(Request r) {
-    // FCM registration token; "" when the phone has no Google services or push was turned off.
+    // FCM registration token or APNs device token; "" when the phone has no push or it was turned off.
     const auto& token = str_param(r.body, "token", 0, 4096);
-    store_.set_push_token(*r.session->user_id, token);
+    // Without "platform" it is FCM: what Android has sent since before iOS existed.
+    std::string platform = "fcm";
+    if (r.body.contains("platform")) platform = str_param(r.body, "platform", 1, 16);
+    if (platform != "fcm" && platform != "apns" && platform != "apns_sandbox") throw ApiError("bad_request");
+    if (platform != "fcm" && !token.empty()) {
+        // The APNs token goes into the request path: hex digits only (32 bytes today; Apple may lengthen it).
+        if (token.size() < 32 || token.size() > 200) throw ApiError("bad_request");
+        for (char c : token)
+            if (!((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'))) throw ApiError("bad_request");
+    }
+    store_.set_push_token(*r.session->user_id, token, platform);
     reply(r);
+}
+
+bool App::can_push(const PushToken& t) const {
+    return t.platform == "fcm" ? push_.enabled() : apns_.enabled();
+}
+
+void App::send_push(const PushToken& t) {
+    if (t.platform == "fcm") push_.wake_for_call(t.token);
+    else apns_.wake_for_call(t.token, t.platform == "apns_sandbox");
 }
 
 // ---------------------------------------------------------------------------
@@ -682,7 +702,8 @@ void App::op_call(Request r) {
     auto online = online_.find(other.id);
     bool connected = online != online_.end() && !online->second.expired();
     // The push also goes to a phone that looks connected: its socket may be dead without the server knowing yet.
-    auto push_token = push_.enabled() ? store_.push_token(other.id) : std::nullopt;
+    auto push_token = store_.push_token(other.id);
+    if (push_token && !can_push(*push_token)) push_token.reset();
     if (!connected && !push_token) throw ApiError("offline");
 
     auto call = std::make_shared<Call>();
@@ -702,8 +723,9 @@ void App::op_call(Request r) {
     user_call_[other.id] = call_id;
 
     notify(other.id, event("call_incoming", {{"call_id", call_id}, {"user_id", me.uuid}, {"msg", msg}}));
-    if (push_token) push_.wake_for_call(*push_token);
-    spdlog::info("call started (callee {}, push {})", connected ? "connected" : "offline", push_token ? "yes" : "no");
+    if (push_token) send_push(*push_token);
+    spdlog::info("call started (callee {}, push {})", connected ? "connected" : "offline",
+                 push_token ? push_token->platform : "no");
     reply(r);
 }
 

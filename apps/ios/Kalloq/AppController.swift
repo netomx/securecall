@@ -83,6 +83,16 @@ final class AppController: ObservableObject {
     @Published var pendingInvite: String?
     /// The call in progress, mirrored from [calls] so the screens only watch one object.
     @Published private(set) var call: CallUi?
+    /// The server has this phone's push token, so calls arrive with the app closed (if the server
+    /// has APNs configured: it does not say).
+    @Published private(set) var pushReady = false
+
+    /// Development builds get tokens for Apple's sandbox servers; TestFlight and App Store, production.
+    #if DEBUG
+    private static let pushPlatform = "apns_sandbox"
+    #else
+    private static let pushPlatform = "apns"
+    #endif
 
     /// `wss://call.l8.nz/ws`, or whatever `-serverURL` the build was launched with (for testing
     /// against a server on this Mac instead of production).
@@ -103,6 +113,12 @@ final class AppController: ObservableObject {
         server = ServerClient(url: serverURL)
         calls = CallController(server: server, store: store, context: self)
         calls.$call.assign(to: &$call)
+        calls.onPushToken = { [weak self] _ in
+            guard let self, self.authenticated else { return }  // otherwise it goes out after the next auth
+            Task { await self.sendPushToken() }
+        }
+        // iOS may have launched the app just for this push: get in now, without waiting out the backoff.
+        calls.onPushArrived = { [weak self] in self?.wakeForPush() }
 
         Task { await watchStates() }
         Task { await watchEvents() }
@@ -194,6 +210,37 @@ final class AppController: ObservableObject {
             notice = .error("identity_unreadable")
         }
         try await refreshContacts()
+        await sendPushToken()
+    }
+
+    /// The token goes with the session on the server, so it is sent again after every login.
+    private func sendPushToken() async {
+        guard let token = calls.pushToken else {
+            // iOS withdrew the token: make the server forget it too, or it would keep pushing into the void.
+            if pushReady { _ = try? await server.call("set_push", ["token": .string(""), "platform": .string(Self.pushPlatform)]) }
+            pushReady = false
+            return
+        }
+        do {
+            try await server.call("set_push", ["token": .string(token), "platform": .string(Self.pushPlatform)])
+            pushReady = true
+        } catch {
+            pushReady = false
+        }
+    }
+
+    /// A push says someone is calling: make sure the connection is really up so the offer can arrive.
+    private func wakeForPush() {
+        guard store.token != nil else { return }
+        guard conn == .connected else { return keepSession() }  // skips what is left of the backoff
+        Task {
+            // The socket may have died while iOS kept the app suspended, without either side noticing.
+            do {
+                try await server.call("ping", timeout: 4)
+            } catch {
+                await server.disconnect()  // the session loop reconnects at once
+            }
+        }
     }
 
     private func watchStates() async {
@@ -220,6 +267,7 @@ final class AppController: ObservableObject {
         endSession()
         calls.sessionLost()
         authenticated = false
+        pushReady = false
         store.clearSession()
         Task { await server.disconnect() }
         phase = .loggedOut

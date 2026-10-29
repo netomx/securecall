@@ -68,7 +68,7 @@ Al conectar, el servidor envía `{"ev":"hello","v":2,"server":"sc-server/<versi�
 | `block` / `unblock` | `user_id` | `{}` |
 | `contacts` | — | `friends: [{user_id, ik, key_version}]`, `incoming: [user_id]`, `outgoing: [user_id]`, `blocked: [user_id]` |
 | `turn` | — | `urls`, `username`, `credential`, `ttl` (para `RTCIceServer`) |
-| `set_push` | `token` (token FCM, máx. 4096; `""` lo borra) | `{}`. Se guarda con la sesión: `logout` o entrar en otro teléfono lo borra. Un mismo token solo pertenece a una cuenta |
+| `set_push` | `token` (máx. 4096; `""` lo borra), `platform` opcional: `fcm` (por omisión), `apns` o `apns_sandbox` | `{}`. Se guarda con la sesión: `logout` o entrar en otro teléfono lo borra. Un mismo token solo pertenece a una cuenta. Un token APNs es hexadecimal, de 32 a 200 caracteres; `apns_sandbox` es para compilaciones de desarrollo, cuyos tokens solo valen en los servidores sandbox de Apple |
 
 ### Llamadas
 
@@ -96,7 +96,7 @@ Si nadie contesta en 45 s, el servidor termina la llamada (`timeout`). Si uno de
 
 Una llamada **contestada** espera 10 s a quien perdió la conexión: el otro recibe `call_reconnecting`, y si vuelve a autenticarse a tiempo los dos reciben `call_resumed` (quien llamó rehace la ruta del audio). Si no, el otro recibe `call_ended` con `disconnected`. Durante una llamada contestada el servidor manda un ping WebSocket cada 10 s y cierra la conexión tras 20 s sin respuesta; fuera de llamadas no hace ping, para no despertar la radio del teléfono.
 
-Si quien recibe tiene token de push, el servidor le manda un push FCM `{"t":"call"}` (sin más datos) al llamar, esté conectado o no.
+Si quien recibe tiene token de push, el servidor le manda un push `{"t":"call"}` (sin más datos) al llamar, esté conectado o no: FCM de alta prioridad en Android, VoIP por APNs en iOS (tema `com.cim.securecall.voip`, caduca a los 40 s). En iOS la app tiene que mostrar una llamada de CallKit en cuanto llega el push, antes de saber quién llama; la actualiza al recibir `call_incoming`. Si el servicio de push de ese token no está configurado en el servidor, cuenta como sin push.
 
 Si alguien te bloqueó, `friend_request` responde `pending` igualmente: no se revela el bloqueo.
 

@@ -14,6 +14,7 @@ find_package(OpenSSL REQUIRED)
 find_package(nlohmann_json 3.10 REQUIRED)
 find_package(spdlog REQUIRED)
 find_package(Threads REQUIRED)
+find_package(CURL REQUIRED)  # HTTP/2 for APNs (libcurl4-openssl-dev on Ubuntu is built with nghttp2)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(SODIUM REQUIRED IMPORTED_TARGET libsodium)
 
@@ -26,6 +27,7 @@ add_executable(sc-server
   src/app.cpp
   src/session.cpp
   src/push.cpp
+  src/apns.cpp
 )
 
 target_compile_options(sc-server PRIVATE -Wall -Wextra -Wpedantic)
@@ -39,6 +41,7 @@ target_link_libraries(sc-server PRIVATE
   spdlog::spdlog
   PkgConfig::SODIUM
   Threads::Threads
+  CURL::libcurl
 )
 
 install(TARGETS sc-server RUNTIME DESTINATION bin)

@@ -21,7 +21,7 @@ public actor ServerClient {
     public nonisolated let states: AsyncStream<ConnState>
 
     private static let connectTimeout: TimeInterval = 20
-    private static let callTimeout: TimeInterval = 20
+    public static let callTimeout: TimeInterval = 20
     private static let pingInterval: TimeInterval = 30
 
     private let url: URL
@@ -83,8 +83,10 @@ public actor ServerClient {
     }
 
     /// One request and its reply. Throws `ServerError` with the server's code when `ok` is false.
+    /// `timeout` is for the reply; a short one tells a dead socket apart quickly (a `ping` after a push).
     @discardableResult
-    public func call(_ op: String, _ params: [String: JSONValue] = [:]) async throws -> JSONValue {
+    public func call(_ op: String, _ params: [String: JSONValue] = [:],
+                     timeout: TimeInterval = ServerClient.callTimeout) async throws -> JSONValue {
         try await connect()
         let id = nextId
         nextId += 1
@@ -94,7 +96,7 @@ public actor ServerClient {
         let text = String(decoding: JSONValue.object(fields).encoded(), as: UTF8.self)
 
         let watchdog = Task { [weak self] in
-            try? await Task.sleep(nanoseconds: UInt64(Self.callTimeout * 1_000_000_000))
+            try? await Task.sleep(nanoseconds: UInt64(timeout * 1_000_000_000))
             await self?.fail(id, ServerError("timeout"))
         }
         defer { watchdog.cancel() }

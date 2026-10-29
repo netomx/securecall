@@ -59,6 +59,10 @@ Config Config::load(const std::string& path) {
         else if (key == "turn_secret_file") c.turn_secret_file = val;
         else if (key == "turn_host") c.turn_host = val;
         else if (key == "fcm_credentials_file") c.fcm_credentials_file = val;
+        else if (key == "apns_key_file") c.apns_key_file = val;
+        else if (key == "apns_key_id") c.apns_key_id = val;
+        else if (key == "apns_team_id") c.apns_team_id = val;
+        else if (key == "apns_bundle_id") c.apns_bundle_id = val;
         else if (key == "turn_ttl") c.turn_ttl = parse_int(key, val, 60, 86400);
         else if (key == "trust_proxy") c.trust_proxy = parse_bool(key, val);
         else if (key == "rate_limits") c.rate_limits = parse_bool(key, val);

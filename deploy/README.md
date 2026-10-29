@@ -98,6 +98,32 @@ install -m 640 -o root -g kalloq fcm.json /etc/kalloq/fcm.json
 systemctl restart sc-server   # el log dice "push enabled (Firebase project ...)"
 ```
 
+## Push para iPhone (APNs)
+
+Sin esto el iPhone solo recibe llamadas con la app abierta. Hace falta la membresía de pago del
+Apple Developer Program: con un equipo personal gratuito no aparecen las llaves de APNs.
+
+1. En [developer.apple.com/account](https://developer.apple.com/account) → **Certificates, Identifiers
+   & Profiles** → **Keys** → **+**. Darle un nombre (p. ej. "Kalloq APNs"), marcar **Apple Push
+   Notifications service (APNs)**, en *Configure* elegir **Sandbox & Production**, y **Register**.
+2. **Download** baja `AuthKey_XXXXXXXXXX.p8`. Apple deja bajarlo **una sola vez**. Las 10 letras del
+   nombre son el **Key ID**, que también aparece en la página de la llave.
+3. En **Identifiers**, el App ID `com.cim.securecall` necesita **Push Notifications** activado (Xcode
+   lo crea al compilar con firma automática; si no, se crea ahí).
+4. El `.p8` es una credencial: copiarlo directo al servidor, nunca al repo:
+
+```bash
+install -m 640 -o root -g kalloq AuthKey_XXXXXXXXXX.p8 /etc/kalloq/apns.p8
+# en /etc/kalloq/sc-server.conf:
+#   apns_key_file = /etc/kalloq/apns.p8
+#   apns_key_id = XXXXXXXXXX
+#   apns_team_id = <Team ID de la cuenta, en developer.apple.com/account → Membership>
+systemctl restart sc-server   # el log dice "APNs enabled (team ..., key ..., topic com.cim.securecall.voip)"
+```
+
+Una misma llave sirve para producción y sandbox. La app avisa cuál le toca en `set_push`:
+`apns_sandbox` en compilaciones de desarrollo (las de Xcode) y `apns` en TestFlight y App Store.
+
 ## Credenciales TURN temporales (formato `use-auth-secret`)
 
 ```
