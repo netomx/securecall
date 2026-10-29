@@ -115,6 +115,9 @@ async def add_remote_ice(c, pc, call_id, transport, stop):
             continue
         if m["ev"] == "call_ice" and m["call_id"] == call_id:
             cand = json.loads(transport.decrypt(unb64(m["msg"])))
+            if "candidate" not in cand:  # hold / ICE restart messages
+                log("  secure message:", {k: v for k, v in cand.items() if k != "sdp"})
+                continue
             ice = candidate_from_sdp(cand["candidate"].split(":", 1)[1])
             ice.sdpMid, ice.sdpMLineIndex = cand.get("sdpMid"), cand.get("sdpMLineIndex")
             await pc.addIceCandidate(ice)

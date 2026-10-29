@@ -10,14 +10,21 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.os.PowerManager
+import androidx.core.telecom.CallControlScope
+import androidx.core.telecom.CallEndpointCompat
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 
 enum class AudioRoute { Earpiece, Speaker, Bluetooth }
 
 /**
  * Call audio: communication mode, audio focus, earpiece / speaker / Bluetooth headset,
  * and the proximity sensor that turns the screen off while the phone is at the ear.
+ *
+ * While the system knows about the call ([SystemCall]) it owns mode, focus and routing: we only follow
+ * its endpoints and ask it to switch. [start] is the fallback when the system did not take the call.
  */
 @Suppress("DEPRECATION")  // legacy speaker/SCO APIs are only used below Android 12
 class AudioRouter(context: Context) {
@@ -27,6 +34,9 @@ class AudioRouter(context: Context) {
         ?.newWakeLock(PowerManager.PROXIMITY_SCREEN_OFF_WAKE_LOCK, "kalloq:proximity")
     private var focus: AudioFocusRequest? = null
     private var active = false
+    private var system: CallControlScope? = null
+    private var systemJobs: List<Job> = emptyList()
+    private var endpoints: List<CallEndpointCompat> = emptyList()
 
     private val _route = MutableStateFlow(AudioRoute.Earpiece)
     val route: StateFlow<AudioRoute> = _route
@@ -75,7 +85,55 @@ class AudioRouter(context: Context) {
         _route.value = AudioRoute.Earpiece
     }
 
+    /** The system has the call: mirror its audio endpoints. */
+    fun followSystem(call: CallControlScope) {
+        stop()
+        system = call
+        systemJobs = listOf(
+            call.launch {
+                call.availableEndpoints.collect { list ->
+                    endpoints = list
+                    _bluetooth.value = list.any { it.type == CallEndpointCompat.TYPE_BLUETOOTH }
+                }
+            },
+            call.launch {
+                call.currentCallEndpoint.collect { e ->
+                    val route = when (e.type) {
+                        CallEndpointCompat.TYPE_SPEAKER -> AudioRoute.Speaker
+                        CallEndpointCompat.TYPE_BLUETOOTH -> AudioRoute.Bluetooth
+                        else -> AudioRoute.Earpiece  // earpiece or wired headset
+                    }
+                    _route.value = route
+                    if (route == AudioRoute.Earpiece && e.type == CallEndpointCompat.TYPE_EARPIECE) acquireProximity() else releaseProximity()
+                }
+            },
+        )
+    }
+
+    fun stopFollowingSystem() {
+        if (system == null) return
+        systemJobs.forEach { it.cancel() }
+        systemJobs = emptyList()
+        system = null
+        endpoints = emptyList()
+        releaseProximity()
+        _route.value = AudioRoute.Earpiece
+        _bluetooth.value = false
+    }
+
+    val followingSystem: Boolean get() = system != null
+
     fun setRoute(route: AudioRoute) {
+        system?.let { call ->
+            val wanted = when (route) {
+                AudioRoute.Speaker -> listOf(CallEndpointCompat.TYPE_SPEAKER)
+                AudioRoute.Bluetooth -> listOf(CallEndpointCompat.TYPE_BLUETOOTH)
+                AudioRoute.Earpiece -> listOf(CallEndpointCompat.TYPE_WIRED_HEADSET, CallEndpointCompat.TYPE_EARPIECE)
+            }
+            val endpoint = wanted.firstNotNullOfOrNull { t -> endpoints.firstOrNull { it.type == t } } ?: return
+            call.launch { call.requestEndpointChange(endpoint) }
+            return
+        }
         val target = if (route == AudioRoute.Bluetooth && !_bluetooth.value) AudioRoute.Earpiece else route
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             val type = when (target) {

@@ -8,6 +8,11 @@ import android.os.SystemClock
 import androidx.annotation.StringRes
 import com.cim.securecall.call.AudioRoute
 import com.cim.securecall.call.AudioRouter
+import com.cim.securecall.call.SystemCall
+import android.Manifest
+import android.content.pm.PackageManager
+import android.telecom.DisconnectCause
+import androidx.core.content.ContextCompat
 import com.cim.securecall.call.CallEngine
 import com.cim.securecall.call.CallNotifications
 import com.cim.securecall.call.CallService
@@ -51,6 +56,7 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.longOrNull
+import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.put
 import org.webrtc.IceCandidate
 import org.webrtc.PeerConnection
@@ -113,6 +119,8 @@ data class CallUi(
     val code: String? = null,          // comparison code from the handshake, same on both phones
     val reconnecting: Boolean = false, // the connection dropped mid-call; it ends if not back in a few seconds
     val rttMs: Int? = null,            // round trip of the audio, for the quality indicator
+    val onHold: Boolean = false,       // the system put our call on hold (a SIM call was answered)
+    val peerOnHold: Boolean = false,   // the other phone did
 )
 
 class AppController(private val app: Application) {
@@ -132,6 +140,10 @@ class AppController(private val app: Application) {
     private val engine = CallEngine(app, scope)
     private val audio = AudioRouter(app)
     private val tones = CallTones(app)
+    private val systemCall = SystemCall(app, scope, audio)
+    private var systemDeclined = false  // the system did not take this call: we run the audio ourselves
+    private var systemAnswering = false // the answer came from the system (car, watch, headset)
+    private var endedLocally = false    // we hung up (vs. the other side or the network)
     private val _call = MutableStateFlow<CallUi?>(null)
     val call: StateFlow<CallUi?> = _call
     private var pendingOffer: String? = null   // decrypted SDP offer of a ringing call
@@ -717,7 +729,7 @@ class AppController(private val app: Application) {
         val callId = UUID.randomUUID().toString()
         _call.value = CallUi(callId, friendId, outgoing = true, phase = CallPhase.Calling, verified = e2e.psk != null)
         CallService.start(app, displayName(friendId))
-        audio.start()
+        startSystemCall(friendId, incoming = false)
         tones.ringback()
         scope.launch {
             try {
@@ -795,6 +807,7 @@ class AppController(private val app: Application) {
         }
         tones.ring()
         CallService.ring(app, displayName(from))
+        startSystemCall(from, incoming = true)
     }
 
     /** Set by MainActivity. The incoming-call notification only pops up when the call screen is not visible. */
@@ -816,7 +829,7 @@ class AppController(private val app: Application) {
         CallNotifications.cancelIncoming(app)
         _call.value = c.copy(phase = CallPhase.Connecting)
         CallService.start(app, displayName(c.peerId))
-        audio.start()
+        if (systemDeclined) audio.start() else if (!systemAnswering) systemCall.answer()
         scope.launch {
             try {
                 engine.open(iceServers(), engineListener)
@@ -853,6 +866,7 @@ class AppController(private val app: Application) {
         if (c.phase == CallPhase.Ended) return
         if (c.phase == CallPhase.Incoming) return rejectCall()
         scope.launch { runCatching { server.call("call_end") { put("call_id", c.callId) } } }
+        endedLocally = true
         finishCall("hangup")
     }
 
@@ -872,6 +886,7 @@ class AppController(private val app: Application) {
         }
         val (sdp, t) = opened
         tones.stop()
+        systemCall.active()
         transport = t
         iceReady = true
         _call.value = c.copy(phase = CallPhase.Connecting, code = CallCrypto.callCode(hs.handshakeHash))
@@ -898,6 +913,7 @@ class AppController(private val app: Application) {
             }
             "answer" -> if (_call.value?.outgoing == true) scope.launch { runCatching { engine.setAnswer(o.str("sdp")!!) } }
         }
+        o["hold"]?.jsonPrimitive?.booleanOrNull?.let { held -> _call.update { it?.copy(peerOnHold = held) } }
         val sdp = o.str("candidate") ?: return
         val index = o["sdpMLineIndex"]?.jsonPrimitive?.intOrNull ?: 0
         engine.addRemoteCandidate(IceCandidate(o.str("sdpMid"), index, sdp))
@@ -905,8 +921,52 @@ class AppController(private val app: Application) {
 
     fun toggleMute() {
         val c = _call.value ?: return
-        engine.setMuted(!c.muted)
+        engine.setOnHold(c.onHold, muted = !c.muted)
         _call.value = c.copy(muted = !c.muted)
+    }
+
+    // ---------------------------------------------------------------- system telephony
+
+    private val systemListener = object : SystemCall.Listener {
+        override fun onSystemAnswer() {
+            check(ContextCompat.checkSelfPermission(app, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+                "no microphone permission"
+            }
+            systemAnswering = true
+            try { acceptCall() } finally { systemAnswering = false }
+        }
+
+        override fun onSystemDisconnect() {
+            if (_call.value?.phase == CallPhase.Incoming) rejectCall() else hangUp()
+        }
+
+        override fun onHold(held: Boolean) = setHold(held)
+
+        override fun onUnavailable() {
+            systemDeclined = true
+            val phase = _call.value?.phase ?: return
+            if (phase == CallPhase.Calling || phase == CallPhase.Connecting || phase == CallPhase.Active) audio.start()
+        }
+    }
+
+    private fun startSystemCall(peerId: String, incoming: Boolean) {
+        systemDeclined = false
+        systemCall.start(displayName(peerId), peerId, incoming, systemListener)
+    }
+
+    /** "Resume" on the call screen after a SIM call put ours on hold. */
+    fun resumeCall() {
+        if (_call.value?.onHold != true) return
+        systemCall.resume { ok -> if (ok) setHold(false) }
+    }
+
+    /** A SIM call took over (or ended): silence both directions and tell the other phone. */
+    private fun setHold(held: Boolean) {
+        val c = _call.value ?: return
+        if (c.onHold == held || c.phase == CallPhase.Incoming || c.phase == CallPhase.Ended) return
+        engine.setOnHold(held, c.muted)
+        _call.value = c.copy(onHold = held)
+        scope.launch { runCatching { sendSecure(c.callId, buildJsonObject { put("hold", held) }.toString()) } }
     }
 
     fun toggleSpeaker() {
@@ -942,6 +1002,17 @@ class AppController(private val app: Application) {
         mediaDown = false
         tones.stop()
         engine.close()
+        systemCall.end(
+            when {
+                !c.outgoing && c.phase == CallPhase.Incoming && reason != null -> DisconnectCause.MISSED
+                reason == null -> DisconnectCause.REJECTED
+                endedLocally -> DisconnectCause.LOCAL
+                reason == "busy" -> DisconnectCause.BUSY
+                reason == "hangup" || reason == "rejected" || reason == "timeout" -> DisconnectCause.REMOTE
+                else -> DisconnectCause.ERROR
+            }
+        )
+        endedLocally = false
         audio.stop()
         CallService.stop(app)
         CallNotifications.cancelIncoming(app)

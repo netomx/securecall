@@ -29,6 +29,7 @@ import androidx.compose.material.icons.filled.MicOff
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -70,6 +71,7 @@ fun CallScreen(
     onMute: () -> Unit,
     onSpeaker: () -> Unit,
     onBluetooth: () -> Unit,
+    onResume: () -> Unit,
 ) {
     BackHandler {}  // the call screen stays until the call ends
 
@@ -104,10 +106,14 @@ fun CallScreen(
             Spacer(Modifier.height(8.dp))
             Text(
                 statusText(call),
-                color = if (call.reconnecting) Color(0xFFFBBF24) else Color.White.copy(alpha = 0.75f),
+                color = if (call.reconnecting || call.onHold || call.peerOnHold) Color(0xFFFBBF24) else Color.White.copy(alpha = 0.75f),
                 style = MaterialTheme.typography.titleMedium,
             )
-            if (call.phase == CallPhase.Active && !call.reconnecting && call.rttMs != null) {
+            if (call.phase == CallPhase.Active && call.onHold) {
+                Spacer(Modifier.height(12.dp))
+                OutlinedButton(onClick = onResume) { Text(stringResource(R.string.call_resume), color = Color.White) }
+            }
+            if (call.phase == CallPhase.Active && !call.reconnecting && !call.onHold && !call.peerOnHold && call.rttMs != null) {
                 Spacer(Modifier.height(12.dp))
                 QualityChip(call.rttMs)
             }
@@ -174,7 +180,10 @@ private fun statusText(call: CallUi): String {
         CallPhase.Calling -> stringResource(R.string.call_calling)
         CallPhase.Incoming -> stringResource(R.string.call_incoming)
         CallPhase.Connecting -> stringResource(R.string.call_connecting)
-        CallPhase.Active -> if (call.reconnecting) stringResource(R.string.call_reconnecting) else {
+        CallPhase.Active -> if (call.reconnecting) stringResource(R.string.call_reconnecting)
+        else if (call.onHold) stringResource(R.string.call_on_hold)
+        else if (call.peerOnHold) stringResource(R.string.call_peer_on_hold)
+        else {
             val secs = ((now - (call.connectedAt ?: now)) / 1000).coerceAtLeast(0)
             "%d:%02d".format(secs / 60, secs % 60)
         }

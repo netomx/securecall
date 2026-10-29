@@ -136,6 +136,9 @@
     <string name="call_bluetooth" translatable="false">Bluetooth</string>
     <string name="call_ended">Call ended</string>
     <string name="call_reconnecting">Reconnecting…</string>
+    <string name="call_on_hold">On hold</string>
+    <string name="call_resume">Resume</string>
+    <string name="call_peer_on_hold">You were put on hold</string>
     <string name="call_quality">%1$s · %2$d ms</string>
     <string name="quality_excellent">Excellent</string>
     <string name="quality_good">Good</string>

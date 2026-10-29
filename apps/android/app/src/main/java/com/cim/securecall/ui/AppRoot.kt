@@ -123,6 +123,7 @@ fun AppRoot(vm: AppController) {
                             onMute = vm::toggleMute,
                             onSpeaker = vm::toggleSpeaker,
                             onBluetooth = vm::toggleBluetooth,
+                            onResume = vm::resumeCall,
                         )
                     }
                 }

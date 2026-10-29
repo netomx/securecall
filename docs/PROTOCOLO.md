@@ -80,6 +80,7 @@ candidatos ICE cifrados (ver ARQUITECTURA §4.4). Solo se puede llamar a amigos.
   que ya atendió: el servidor podría repetir una oferta vieja, que descifra bien pero no debe volver a sonar.
 - `call_answer.msg` = Noise mensaje 2, con `{"sdp": respuesta}`.
 - `call_ice.msg` = nonce (8 bytes, big-endian) ‖ AES-GCM(`{candidate, sdpMid, sdpMLineIndex}`), o bien
+  `{hold: true|false}` cuando el sistema pone la llamada en espera (entró una llamada SIM) o la reanuda, y
   `{restart: "offer"|"answer", sdp}` para rehacer la ruta del audio (ICE restart) tras un corte. Solo quien
   llamó manda `offer`, así nunca se cruzan dos.
 

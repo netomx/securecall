@@ -40,8 +40,8 @@ configure<com.android.build.api.dsl.ApplicationExtension> {
         applicationId = "com.cim.securecall"
         minSdk = 26
         targetSdk = 36
-        versionCode = 9
-        versionName = "0.7.0"
+        versionCode = 10
+        versionName = "0.8.0"
         firebaseValues.forEach { (k, v) -> resValue("string", k, v) }
         // Phones (arm) and the x86_64 emulator; drops 32-bit x86 to keep the APK smaller.
         // `-Pabis=arm64-v8a` builds a single-ABI APK small enough to send to a phone.
@@ -91,6 +91,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.core.telecom)
 
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)

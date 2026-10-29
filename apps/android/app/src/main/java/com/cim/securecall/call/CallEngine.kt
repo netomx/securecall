@@ -124,6 +124,12 @@ class CallEngine(private val context: Context, private val scope: CoroutineScope
         track?.setEnabled(!muted)
     }
 
+    /** On hold: no microphone and no sound from the other side. [muted] is the user's own mute. */
+    fun setOnHold(held: Boolean, muted: Boolean) {
+        track?.setEnabled(!held && !muted)
+        pc?.receivers?.forEach { it.track()?.setEnabled(!held) }
+    }
+
     fun close() {
         pc?.dispose()
         track?.dispose()

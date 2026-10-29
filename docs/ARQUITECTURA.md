@@ -207,8 +207,9 @@ secure-call/
 | 2 | ✅ Android: login/registro, código de recuperación, amigos por QR/enlace, ES/EN (`apps/android`) |
 | 3 | ✅ Llamadas de voz WebRTC (señalización + TURN), silenciar, altavoz, Bluetooth, servicio en primer plano. Sin capa E2E extra todavía: hoy el audio va cifrado con DTLS-SRTP entre los teléfonos, pero las huellas DTLS pasan por el servidor sin verificar |
 | 4 | ✅ E2E: Noise KKpsk2 por llamada (SDP e ICE cifrados, huellas DTLS autenticadas), código de seguridad en llamada, verificación en persona por QR con PSK |
-| 5 | ✅ Push FCM (recibir llamadas con la app cerrada), notificación de llamada con Contestar/Rechazar, llamadas perdidas, audio no capturable por otras apps · pendiente: ConnectionService/Telecom |
+| 5 | ✅ Push FCM (recibir llamadas con la app cerrada), notificación de llamada con Contestar/Rechazar, llamadas perdidas, audio no capturable por otras apps |
 | 6 | ✅ Endurecimiento: límites por cuenta e IP (llamadas, cambios de llave/ID, conexiones), cola de envío acotada, login obligatorio en 60 s, fuzzer del protocolo, revisión de seguridad de la app (renombres sin reemplazar llaves, ofertas con fecha y no repetibles, Contestar solo desde la notificación, FLAG_SECURE en toda la app), respaldos diarios, APK release firmado y App Links verificados |
+| 7 | ✅ Integración con la telefonía de Android (Telecom autogestionado vía `androidx.core:core-telecom`: ConnectionService hasta Android 13, API de llamadas en 14+): una llamada SIM pone la nuestra en espera ("Reanudar"), coche/reloj/audífonos contestan y cuelgan, el sistema maneja modo y rutas de audio. Si el sistema no acepta la llamada, la app la maneja sola. AAB firmado con llave de subida RSA para Play |
 
 ---
 
