@@ -70,6 +70,20 @@ final class Store {
         save()
     }
 
+    /// Incoming call ids already handled, so an offer the server replays does not ring again.
+    /// Only the last [seenCalls] matter: an older one can no longer pass the offer's timestamp.
+    func callSeen(_ callId: String) -> Bool {
+        defaults.stringArray(forKey: "seen_calls")?.contains(callId) ?? false
+    }
+
+    func markCallSeen(_ callId: String) {
+        var seen = (defaults.stringArray(forKey: "seen_calls") ?? []).filter { $0 != callId }
+        seen.append(callId)
+        defaults.set(seen.suffix(Self.seenCalls).map { $0 }, forKey: "seen_calls")
+    }
+
+    private static let seenCalls = 200
+
     func clearSession() { token = nil }
 
     /// New account on this device: forget the previous identity and contacts.

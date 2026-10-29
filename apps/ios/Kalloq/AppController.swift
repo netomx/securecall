@@ -1,3 +1,4 @@
+import Combine
 import Foundation
 import KalloqCore
 
@@ -46,6 +47,12 @@ enum Notice: Equatable, Identifiable {
         "timeout": "No se puede conectar al servidor",
         "disconnected": "No se puede conectar al servidor",
         "identity_unreadable": "No se puede leer tu llave de identidad guardada",
+        "key_changed": "La llave de este contacto cambió: confírmala antes de llamar",
+        "e2e_failed": "No se pudo cifrar la llamada con este contacto",
+        "verify_mismatch": "La verificación en persona ya no coincide: verifiquen de nuevo",
+        "no_microphone": "Kalloq necesita permiso para usar el micrófono",
+        "offline": "Ese contacto no está disponible",
+        "in_call": "Ya estás en una llamada",
     ]
 }
 
@@ -74,6 +81,8 @@ final class AppController: ObservableObject {
     @Published private(set) var busy = false
     @Published var notice: Notice?
     @Published var pendingInvite: String?
+    /// The call in progress, mirrored from [calls] so the screens only watch one object.
+    @Published private(set) var call: CallUi?
 
     /// `wss://call.l8.nz/ws`, or whatever `-serverURL` the build was launched with (for testing
     /// against a server on this Mac instead of production).
@@ -81,6 +90,7 @@ final class AppController: ObservableObject {
 
     private let store = Store()
     private let server: ServerClient
+    private(set) var calls: CallController!
     private var sessionTask: Task<Void, Never>?
     private var backoffSleep: Task<Void, Never>?
     private var sessionGeneration = 0
@@ -91,6 +101,8 @@ final class AppController: ObservableObject {
     init() {
         serverURL = UserDefaults.standard.string(forKey: "serverURL") ?? Server.url
         server = ServerClient(url: serverURL)
+        calls = CallController(server: server, store: store, context: self)
+        calls.$call.assign(to: &$call)
 
         Task { await watchStates() }
         Task { await watchEvents() }
@@ -206,6 +218,7 @@ final class AppController: ObservableObject {
 
     private func signedOut(reason: String?) {
         endSession()
+        calls.sessionLost()
         authenticated = false
         store.clearSession()
         Task { await server.disconnect() }
@@ -224,6 +237,12 @@ final class AppController: ObservableObject {
     private func watchEvents() async {
         for await event in server.events {
             switch event.string("ev") {
+            case "call_incoming": calls.onIncoming(event)
+            case "call_answered": calls.onAnswered(event)
+            case "call_ice": calls.onRemoteIce(event)
+            case "call_ended": calls.onEnded(event)
+            case "call_reconnecting": calls.onReconnecting(event)
+            case "call_resumed": calls.onResumed(event)
             case "session_revoked":
                 signedOut(reason: "Tu cuenta se abrió en otro dispositivo")
             case "friend_request":
@@ -246,7 +265,7 @@ final class AppController: ObservableObject {
                 }
                 await reload()
             default:
-                break  // call events arrive in step 3
+                break
             }
         }
     }
@@ -435,6 +454,8 @@ final class AppController: ObservableObject {
         friends = decorate(friends)
     }
 
+    func startCall(_ id: String) { calls.start(friendId: id) }
+
     /// The user confirmed the contact's new key: pin it.
     func trustKey(_ id: String) {
         guard let ik = friends.first(where: { $0.id == id })?.ik else { return }
@@ -446,5 +467,22 @@ final class AppController: ObservableObject {
             friend.pinned = ik
             return friend
         })
+    }
+}
+
+extension AppController: CallContext {
+    func show(_ notice: Notice) { self.notice = notice }
+
+    /**
+     * Keys for a call with this contact: the identity key we pinned, plus the QR PSK once in-person
+     * verification exists. Nil means we must not call: either their key changed and nobody confirmed
+     * it, or our own identity cannot be read.
+     */
+    func callKeys(for friendId: String) -> CallKeys? {
+        guard friends.first(where: { $0.id == friendId })?.keyChanged != true,
+              let pinned = store.pins[friendId],
+              let peerIk = Base64URL.decode(pinned),
+              let seed = store.identitySeed else { return nil }
+        return CallKeys(seed: seed, peerIk: peerIk, psk: nil)
     }
 }

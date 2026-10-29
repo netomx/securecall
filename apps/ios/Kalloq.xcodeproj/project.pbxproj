@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		1A0000000000000000000012 /* KalloqCore in Frameworks */ = {isa = PBXBuildFile; productRef = 1A0000000000000000000011 /* KalloqCore */; };
+		1A0000000000000000000022 /* WebRTC in Frameworks */ = {isa = PBXBuildFile; productRef = 1A0000000000000000000021 /* WebRTC */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -24,6 +25,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				1A0000000000000000000012 /* KalloqCore in Frameworks */,
+				1A0000000000000000000022 /* WebRTC in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -67,6 +69,7 @@
 			name = Kalloq;
 			packageProductDependencies = (
 				1A0000000000000000000011 /* KalloqCore */,
+				1A0000000000000000000021 /* WebRTC */,
 			);
 			productName = Kalloq;
 			productReference = 1A0000000000000000000004 /* Kalloq.app */;
@@ -100,6 +103,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				1A0000000000000000000010 /* XCLocalSwiftPackageReference "KalloqCore" */,
+				1A0000000000000000000020 /* XCRemoteSwiftPackageReference "WebRTC" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 1A0000000000000000000003 /* Products */;
@@ -191,6 +195,8 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Kalloq;
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Kalloq necesita el micrófono para tus llamadas.";
+				INFOPLIST_KEY_UIBackgroundModes = audio;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
@@ -215,6 +221,8 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Kalloq;
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Kalloq necesita el micrófono para tus llamadas.";
+				INFOPLIST_KEY_UIBackgroundModes = audio;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
@@ -260,7 +268,23 @@
 		};
 /* End XCLocalSwiftPackageReference section */
 
+/* Begin XCRemoteSwiftPackageReference section */
+		1A0000000000000000000020 /* XCRemoteSwiftPackageReference "WebRTC" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/stasel/WebRTC.git";
+			requirement = {
+				kind = exactVersion;
+				version = 156.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
 /* Begin XCSwiftPackageProductDependency section */
+		1A0000000000000000000021 /* WebRTC */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 1A0000000000000000000020 /* XCRemoteSwiftPackageReference "WebRTC" */;
+			productName = WebRTC;
+		};
 		1A0000000000000000000011 /* KalloqCore */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = KalloqCore;

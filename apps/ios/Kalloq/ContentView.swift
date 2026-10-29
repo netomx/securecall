@@ -19,6 +19,9 @@ struct ContentView: View {
         }
         .animation(.default, value: app.phase)
         .noticeAlert()
+        .fullScreenCover(item: Binding(get: { app.call }, set: { _ in })) { call in
+            CallView(call: call)
+        }
     }
 }
 

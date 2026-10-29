@@ -32,6 +32,10 @@ xcodebuild -project Kalloq.xcodeproj -scheme Kalloq \
 | `Kalloq/ContactDetailView.swift` | Nombre local, ID, huella, aviso de llave cambiada, eliminar y bloquear |
 | `Kalloq/AddContactView.swift` | Tu QR y tu enlace; agregar pegando un ID o enlace |
 | `Kalloq/SettingsView.swift` | Cuenta, seguridad, cerrar sesión y eliminar cuenta |
+| `Kalloq/CallEngine.swift` | WebRTC solo audio (Opus, DTLS-SRTP), ICE por goteo, cola de candidatos remotos |
+| `Kalloq/SystemCall.swift` | CallKit: pantalla de llamada del sistema, espera, y el audio que solo arranca en `didActivate` |
+| `Kalloq/CallController.swift` | Una llamada a la vez: handshake Noise, ICE cifrado, silenciar, altavoz, colgar |
+| `Kalloq/CallView.swift` | Pantalla de llamada con el código de seguridad de 6 dígitos |
 | `Kalloq/SelfCheck.swift` | Los vectores de referencia, para comprobarlos desde Ajustes |
 
 ## Compatibilidad con Android
@@ -56,14 +60,29 @@ xcrun simctl launch <udid> com.cim.securecall -serverURL "ws://127.0.0.1:18080/w
 Es un argumento de lanzamiento, no un ajuste: solo se puede poner desde Xcode o `simctl`, así que
 la app instalada siempre habla con producción. Ajustes → Acerca de muestra con cuál está hablando.
 
+## Compilar para un iPhone
+
+El proyecto no lleva el Team ID dentro; se pasa al compilar:
+
+```bash
+xcodebuild -project Kalloq.xcodeproj -scheme Kalloq \
+  -destination 'platform=iOS,id=<udid>' \
+  DEVELOPMENT_TEAM=<TeamID> -allowProvisioningUpdates build
+xcrun devicectl device install app --device <device-id> <ruta>/Kalloq.app
+```
+
 ## Estado
 
-Hechos los pasos 1 y 2 de `IOS_ARRANQUE.md`: proyecto, capa de cifrado, cliente del protocolo y
-pantallas de cuenta y contactos. Faltan la llamada con WebRTC + CallKit (3), APNs y PushKit (4) y
-Universal Links, verificación por QR, ES/EN y TestFlight (5).
+Hechos los pasos 1 a 3 de `IOS_ARRANQUE.md`: proyecto, capa de cifrado, cliente del protocolo,
+pantallas de cuenta y contactos, y la llamada de voz con WebRTC y CallKit. Faltan APNs y PushKit (4)
+y Universal Links, verificación por QR, ES/EN y TestFlight (5).
 
 Pendientes conocidos dentro de lo ya hecho: leer el QR con la cámara (se agrega junto con la
-verificación en persona) y los textos en inglés (toda la interfaz está en español por ahora).
+verificación en persona), los textos en inglés (toda la interfaz está en español por ahora), y el
+indicador de calidad de la llamada (el RTT que Android muestra).
 
-No hay cuenta de Apple Developer configurada todavía: la app compila y corre en el simulador sin
-firmar. CallKit y PushKit solo se pueden probar en un iPhone físico.
+**El simulador no tiene telefonía:** CallKit resetea su proveedor en cuanto se reporta una llamada
+entrante, así que la app se queda con la llamada en su propia pantalla y arranca el audio ella misma
+(`SystemCall.activateAudioDirectly`). Eso es justo lo que pasaría en un teléfono si CallKit rechazara
+la llamada, pero el comportamiento real —pantalla del sistema, llamada en espera por una llamada
+normal, coche y audífonos— solo se puede comprobar en un iPhone físico.

@@ -68,10 +68,18 @@ struct ContactDetailView: View {
                 }
 
                 Section {
-                    Label("Llamar", systemImage: "phone.fill")
-                        .foregroundStyle(.secondary)
+                    Button {
+                        app.startCall(id)
+                    } label: {
+                        Label("Llamar", systemImage: "phone.fill")
+                    }
+                    .disabled(friend.keyChanged || friend.ik == nil || app.call != nil)
                 } footer: {
-                    Text("Las llamadas llegan con WebRTC y CallKit, en el siguiente paso.")
+                    if friend.keyChanged {
+                        Text("No se puede llamar hasta confirmar la llave nueva.")
+                    } else if friend.ik == nil {
+                        Text("Este contacto todavía no publicó su llave.")
+                    }
                 }
 
                 Section {
