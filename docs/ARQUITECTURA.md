@@ -165,8 +165,10 @@ A                         sc-server                       B
   lo cambia por un token OAuth (cache 55 min) y llama a la API HTTP v1, con Boost.Beast + OpenSSL.
 - Sin `google-services.json` en la compilación, o sin Google Play Services, no hay push: la app
   lo indica en Ajustes y solo recibe llamadas mientras está viva (UnifiedPush como opción futura).
-- **ConnectionService / Telecom: pendiente.** Integrarse con Telecom cambia quién controla el audio
-  (altavoz/Bluetooth) y se hará por separado, cuando lo actual esté probado en teléfonos reales.
+- **Telecom (0.8.0):** la llamada se registra con el sistema mediante `androidx.core.telecom`
+  (`SystemCall.kt`): Android pone Kalloq en espera si entra una llamada normal, el coche o los
+  audífonos pueden contestar y colgar, y el sistema elige la salida de audio.
+- **iOS:** ver `IOS_ARRANQUE.md` (CallKit + PushKit por APNs).
 
 ---
 
