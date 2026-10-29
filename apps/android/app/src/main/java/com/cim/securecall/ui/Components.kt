@@ -148,6 +148,7 @@ fun noticeText(n: Notice): String = when (n) {
             "key_changed" -> R.string.err_key_changed
             "e2e_failed" -> R.string.err_e2e_failed
             "verify_mismatch" -> R.string.err_verify_mismatch
+            "identity_unreadable" -> R.string.err_identity_unreadable
             "verify_invalid" -> R.string.err_verify_invalid
             "verify_other" -> R.string.err_verify_other
             "verify_key" -> R.string.err_verify_key

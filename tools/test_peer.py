@@ -169,7 +169,8 @@ async def main():
         pc, stats = await new_pc(c)
         await pc.setLocalDescription(await pc.createOffer())
         hs = kc.handshake(True, SEED, target_ik, None, call_id)
-        payload = json.dumps({"sdp": pc.localDescription.sdp, "psk": kc.psk_id(None)}).encode()
+        payload = json.dumps({"sdp": pc.localDescription.sdp, "psk": kc.psk_id(None),
+                              "ts": int(time.time() * 1000)}).encode()
         await c.call("call", user_id=TARGET, call_id=call_id, msg=b64(hs.write_offer(payload)))
         log("CALLING emulator", call_id)
         m = await c.event("call_answered", "call_ended", timeout=90)
@@ -195,7 +196,7 @@ async def main():
             await asyncio.sleep(3)
             call_id = str(uuid.uuid4())
             hs = kc.handshake(True, seed, target_ik, psk, call_id)
-            payload = json.dumps({"sdp": "v=0", "psk": kc.psk_id(psk)}).encode()
+            payload = json.dumps({"sdp": "v=0", "psk": kc.psk_id(psk), "ts": int(time.time() * 1000)}).encode()
             await c.call("call", user_id=TARGET, call_id=call_id, msg=b64(hs.write_offer(payload)))
             m = await c.event("call_ended", "call_answered", timeout=20)
             log(f"{label}: {m['ev']} {m.get('reason', '')}")

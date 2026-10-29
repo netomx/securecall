@@ -175,6 +175,7 @@
     <string name="err_verify_other">That code belongs to another contact</string>
     <string name="err_verify_key">The key in that code does not match the one you have for this contact</string>
     <string name="err_key_changed">This contact\'s key changed or is missing. Check their card before calling.</string>
+    <string name="err_identity_unreadable">This phone can no longer read its encryption key. Calls will not work until you create a new account.</string>
     <string name="err_e2e_failed">Rejected a call that could not be verified</string>
     <string name="err_verify_mismatch">A call failed because your QR verification with that contact does not match. Verify again.</string>
     <string name="notif_channel_incoming_quiet">Incoming call (app open)</string>

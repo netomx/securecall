@@ -1,7 +1,6 @@
 package com.cim.securecall.ui
 
 import android.app.Activity
-import android.view.WindowManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
@@ -31,7 +30,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
@@ -40,7 +38,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
@@ -54,13 +51,6 @@ import com.journeyapps.barcodescanner.ScanOptions
 /** Both people open this screen for each other, scan each other's QR and compare the resulting code. */
 @Composable
 fun VerifyScreen(vm: AppController, friend: Friend, onBack: () -> Unit) {
-    val context = LocalContext.current
-    // The QR holds half of the secret: keep it out of screenshots and the recent-apps thumbnail.
-    DisposableEffect(Unit) {
-        val window = (context as? Activity)?.window
-        window?.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
-        onDispose { window?.clearFlags(WindowManager.LayoutParams.FLAG_SECURE) }
-    }
     var generation by rememberSaveable { mutableIntStateOf(0) }  // bumped by "Start again"
     val qrText = remember(friend.id, friend.pinned, generation) { vm.verifyQrText(friend.id) }
     val qr = remember(qrText) { qrText?.let { qrBitmap(it) } }

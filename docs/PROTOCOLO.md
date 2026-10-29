@@ -75,7 +75,9 @@ Al conectar, el servidor envía `{"ev":"hello","v":2,"server":"sc-server/<versi�
 El servidor solo reenvía `msg`, que es opaco para él (base64url): los mensajes Noise del handshake y los
 candidatos ICE cifrados (ver ARQUITECTURA §4.4). Solo se puede llamar a amigos.
 
-- `call.msg` = Noise mensaje 1, cuyo contenido es `{"sdp": oferta, "psk": id del PSK o "none"}`.
+- `call.msg` = Noise mensaje 1, cuyo contenido es `{"sdp": oferta, "psk": id del PSK o "none", "ts": ms Unix}`.
+  El que recibe rechaza en silencio (`call_reject`) una oferta con más de 10 min de diferencia en `ts` o un `call_id`
+  que ya atendió: el servidor podría repetir una oferta vieja, que descifra bien pero no debe volver a sonar.
 - `call_answer.msg` = Noise mensaje 2, con `{"sdp": respuesta}`.
 - `call_ice.msg` = nonce (8 bytes, big-endian) ‖ AES-GCM(`{candidate, sdpMid, sdpMLineIndex}`), o bien
   `{restart: "offer"|"answer", sdp}` para rehacer la ruta del audio (ICE restart) tras un corte. Solo quien

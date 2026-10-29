@@ -171,6 +171,7 @@
     <string name="err_verify_other">Ese código es de otro contacto</string>
     <string name="err_verify_key">La llave de ese código no coincide con la que tienes para este contacto</string>
     <string name="err_key_changed">La llave de este contacto cambió o falta. Revisa su ficha antes de llamar.</string>
+    <string name="err_identity_unreadable">Este teléfono ya no puede leer su llave de cifrado. Las llamadas no funcionarán hasta que crees una cuenta nueva.</string>
     <string name="err_e2e_failed">Se rechazó una llamada que no se pudo verificar</string>
     <string name="err_verify_mismatch">Falló una llamada porque su verificación por QR con ese contacto no coincide. Verifiquen de nuevo.</string>
     <string name="notif_channel_incoming_quiet">Llamada entrante (app abierta)</string>

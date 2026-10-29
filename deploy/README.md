@@ -25,6 +25,7 @@ ufw allow 3478 && ufw allow 5349 && ufw allow 49152:65535/udp && ufw enable
 # Web + certificado
 mkdir -p /var/www/letsencrypt /var/www/call.l8.nz
 install -m 644 www/invite.html /var/www/call.l8.nz/
+install -D -m 644 www/.well-known/assetlinks.json /var/www/call.l8.nz/.well-known/assetlinks.json  # huella de la llave release
 rm -f /etc/nginx/sites-enabled/default
 install -m 644 nginx/acme-only.conf /etc/nginx/sites-available/call.l8.nz
 ln -sf /etc/nginx/sites-available/call.l8.nz /etc/nginx/sites-enabled/
@@ -65,6 +66,21 @@ systemctl daemon-reload && systemctl enable --now sc-server
 
 El servicio corre como `kalloq` con aislamiento de systemd (`systemd-analyze security sc-server` → 1.7 OK).
 La base de datos SQLite vive en `/var/lib/kalloq/kalloq.db` (modo 600).
+
+## Respaldos
+
+Copia diaria consistente (`sqlite3 .backup`, verificada con `integrity_check`) en
+`/var/backups/kalloq/`, 14 días. Conviene copiarlos también fuera del servidor.
+
+```bash
+apt-get install -y sqlite3
+install -m 700 deploy/backup/kalloq-backup.sh /usr/local/sbin/kalloq-backup
+install -m 644 deploy/systemd/kalloq-backup.service deploy/systemd/kalloq-backup.timer /etc/systemd/system/
+systemctl daemon-reload && systemctl enable --now kalloq-backup.timer
+```
+
+Restaurar: `systemctl stop sc-server`, `gunzip -c respaldo.db.gz > /var/lib/kalloq/kalloq.db`,
+`chown kalloq:kalloq` y `chmod 600`, borrar `kalloq.db-wal`/`-shm`, `systemctl start sc-server`.
 
 ## Push (Firebase Cloud Messaging)
 

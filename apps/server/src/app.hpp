@@ -144,6 +144,8 @@ private:
     RateLimiter ip_register_;   // new accounts per IP
     RateLimiter account_auth_;  // login / recover attempts per username
     RateLimiter friend_reqs_;   // friend requests per account
+    RateLimiter account_calls_;    // calls started and TURN credentials per account
+    RateLimiter account_changes_;  // identity key / user id changes per account (each notifies all friends)
 };
 
 }  // namespace kq

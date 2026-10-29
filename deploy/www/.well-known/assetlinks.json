@@ -1,0 +1,8 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "com.cim.securecall",
+    "sha256_cert_fingerprints": ["16:31:CB:49:07:81:AC:3B:A0:6D:E2:F2:24:88:C3:59:60:01:04:43:EE:E6:AA:14:F0:55:F0:9A:51:BD:42:EA"]
+  }
+}]

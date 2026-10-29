@@ -50,10 +50,12 @@ import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.longOrNull
 import kotlinx.serialization.json.put
 import org.webrtc.IceCandidate
 import org.webrtc.PeerConnection
 import java.util.UUID
+import kotlin.math.abs
 
 sealed interface Phase {
     data object Loading : Phase
@@ -255,8 +257,12 @@ class AppController(private val app: Application) {
     }
 
     private suspend fun afterAuth() {
-        val seed = store.identitySeed ?: Identity.newSeed().also { store.identitySeed = it }
-        server.call("set_key") { put("ik", b64url(Identity.publicKey(seed))) }
+        val seed = store.identitySeed
+            ?: if (store.hasIdentitySeed) null else Identity.newSeed().also { store.identitySeed = it }
+        // Our stored identity exists but cannot be read: do not publish a new one (every contact would see
+        // "key changed"); say so instead.
+        if (seed == null) notice(Notice.Error("identity_unreadable"))
+        else server.call("set_key") { put("ik", b64url(Identity.publicKey(seed))) }
         refreshContacts()
         Push.token()?.let { sendPushToken(it) }
     }
@@ -346,9 +352,10 @@ class AppController(private val app: Application) {
                     "friend_accepted" -> notice(Notice.Info(R.string.notice_friend_accepted))
                     "key_changed" -> notice(Notice.Info(R.string.notice_key_changed))
                     "friend_id_changed" -> {
-                        val old = ev.str("old_id")
-                        val new = ev.str("new_id")
-                        if (old != null && new != null) store.renameContact(old, new)
+                        val old = ev.str("old_id")?.let(::parseFriendId)
+                        val new = ev.str("new_id")?.let(::parseFriendId)
+                        // Only for someone who is our contact now.
+                        if (old != null && new != null && _ui.value.friends.any { it.id == old }) store.renameContact(old, new)
                     }
                 }
                 runCatching { refreshContacts() }
@@ -359,9 +366,9 @@ class AppController(private val app: Application) {
     private suspend fun refreshContacts() {
         val r = server.call("contacts")
         val pins = store.pins()
-        val friends = r["friends"]!!.jsonArray.map { el ->
+        val friends = r["friends"]!!.jsonArray.mapNotNull { el ->
             val o = el.jsonObject
-            val id = o.str("user_id")!!
+            val id = o.str("user_id")?.let(::parseFriendId) ?: return@mapNotNull null
             val ik = o.str("ik")
             var pinned = pins[id]
             if (pinned == null && ik != null) {
@@ -723,6 +730,7 @@ class AppController(private val app: Application) {
                 val payload = buildJsonObject {
                     put("sdp", offer)
                     put("psk", CallCrypto.pskId(e2e.psk))
+                    put("ts", System.currentTimeMillis())  // lets the callee refuse a replayed old offer
                 }.toString()
                 handshake = hs
                 server.call("call") {
@@ -763,10 +771,17 @@ class AppController(private val app: Application) {
             Json.parseToJsonElement(hs.readOffer(b64urlDecode(ev.str("msg")!!)!!).decodeToString()).jsonObject
         }.getOrNull() ?: return reject("e2e_failed")
         if (offer.str("psk") != CallCrypto.pskId(e2e.psk)) return reject("verify_mismatch")
+        // The server could replay a call it relayed before: it decrypts, but must not ring again.
+        val sentAt = offer["ts"]?.jsonPrimitive?.longOrNull
+        if (sentAt == null || abs(System.currentTimeMillis() - sentAt) > OFFER_MAX_AGE_MS || store.callSeen(callId)) {
+            scope.launch { runCatching { server.call("call_reject") { put("call_id", callId) } } }
+            return
+        }
         pendingOffer = offer.str("sdp") ?: return reject("e2e_failed")
         handshake = hs
         _call.value = CallUi(callId, from, outgoing = false, phase = CallPhase.Incoming, verified = e2e.psk != null)
         ringSeenAt = SystemClock.elapsedRealtime()
+        CallNotifications.answerToken = UUID.randomUUID().toString()
         // Keep the CPU awake while ringing so the "call ended" event is not missed in a sleeping phone,
         // and give up on our own if it never arrives (the server rings for 45 s).
         pushWakeLock.acquire(RING_LIMIT_MS)
@@ -908,6 +923,8 @@ class AppController(private val app: Application) {
     private fun finishCall(reason: String?) {
         val c = _call.value ?: return
         if (c.phase == CallPhase.Ended) return
+        if (!c.outgoing) store.markCallSeen(c.callId)
+        CallNotifications.answerToken = null
         pendingOffer = null
         handshake = null
         transport = null
@@ -945,6 +962,8 @@ class AppController(private val app: Application) {
 
 private const val RING_LIMIT_MS = 60_000L
 private const val RECONNECT_LIMIT_MS = 10_000L
+// How old an incoming offer may be. Generous: phone clocks drift and a sleeping phone is woken by push.
+private const val OFFER_MAX_AGE_MS = 10 * 60_000L
 
 private fun JsonObject.str(key: String): String? = this[key]?.let { runCatching { it.jsonPrimitive.contentOrNull }.getOrNull() }
 

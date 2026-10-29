@@ -8,9 +8,14 @@ namespace kq {
 
 namespace {
 constexpr std::size_t kMaxMessage = 16 * 1024;
+// A client that stops reading is dropped instead of buffering for it forever.
+constexpr std::size_t kMaxQueued = 256;
+// A connection must log in within this time, so idle sockets cannot hold connection slots.
+constexpr auto kAuthDeadline = std::chrono::seconds(60);
 }
 
-Session::Session(tcp::socket socket, App& app) : ws_(std::move(socket)), app_(app) {}
+Session::Session(tcp::socket socket, App& app)
+    : ws_(std::move(socket)), app_(app), auth_deadline_(ws_.get_executor()) {}
 
 void Session::start() {
     beast::error_code ec;
@@ -50,6 +55,10 @@ void Session::on_accept(beast::error_code ec) {
     if (ec) return finish();
     buffer_.consume(buffer_.size());
     opened_ = true;
+    auth_deadline_.expires_after(kAuthDeadline);
+    auth_deadline_.async_wait([self = shared_from_this()](beast::error_code ec) {
+        if (!ec && !self->user_id) self->close();
+    });
     app_.on_open(shared_from_this());
     do_read();
 }
@@ -69,6 +78,7 @@ void Session::on_read(beast::error_code ec, std::size_t) {
 
 void Session::send(std::string text) {
     if (!is_open()) return;
+    if (queue_.size() >= kMaxQueued) return abort();
     queue_.push_back(std::move(text));
     if (queue_.size() == 1) do_write();
 }
@@ -95,9 +105,16 @@ void Session::do_close() {
     ws_.async_close(websocket::close_code::normal, [self = shared_from_this()](beast::error_code) { self->finish(); });
 }
 
+void Session::abort() {
+    beast::error_code ec;
+    beast::get_lowest_layer(ws_).socket().close(ec);  // pending reads and writes fail and call finish()
+    closing_ = true;
+}
+
 void Session::finish() {
     if (closed_) return;
     closed_ = true;
+    auth_deadline_.cancel();
     if (opened_) app_.on_closed(*this);
 }
 

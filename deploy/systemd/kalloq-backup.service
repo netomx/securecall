@@ -1,0 +1,8 @@
+[Unit]
+Description=Back up the Kalloq database
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/kalloq-backup
+Nice=10
+IOSchedulingClass=idle

@@ -52,12 +52,14 @@ private:
     void on_write(beast::error_code ec, std::size_t);
     void do_close();
     void finish();
+    void abort();
 
     websocket::stream<beast::tcp_stream> ws_;
     App& app_;
     beast::flat_buffer buffer_;
     http::request<http::string_body> req_;
     std::deque<std::string> queue_;
+    asio::steady_timer auth_deadline_;
     std::string ip_;
     bool opened_ = false;
     bool closing_ = false;

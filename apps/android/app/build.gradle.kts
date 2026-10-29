@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.serialization)
@@ -23,6 +25,13 @@ val firebaseValues: Map<String, String> = file("google-services.json").takeIf { 
     ).filterValues { it != null }.mapValues { it.value.toString() }
 } ?: emptyMap()
 
+// Release signing: `kalloq.signing` in local.properties points to a properties file (storeFile, storePassword,
+// keyAlias, keyPassword) kept outside the repository. Without it the release build is left unsigned.
+val signingProps: Properties? = rootProject.file("local.properties").takeIf { it.exists() }
+    ?.let { f -> Properties().apply { f.inputStream().use(::load) } }
+    ?.getProperty("kalloq.signing")?.let(::file)?.takeIf { it.exists() }
+    ?.let { f -> Properties().apply { f.inputStream().use(::load) } }
+
 configure<com.android.build.api.dsl.ApplicationExtension> {
     namespace = "com.cim.securecall"
     compileSdk = 36
@@ -31,8 +40,8 @@ configure<com.android.build.api.dsl.ApplicationExtension> {
         applicationId = "com.cim.securecall"
         minSdk = 26
         targetSdk = 36
-        versionCode = 8
-        versionName = "0.6.0"
+        versionCode = 9
+        versionName = "0.7.0"
         firebaseValues.forEach { (k, v) -> resValue("string", k, v) }
         // Phones (arm) and the x86_64 emulator; drops 32-bit x86 to keep the APK smaller.
         // `-Pabis=arm64-v8a` builds a single-ABI APK small enough to send to a phone.
@@ -40,9 +49,21 @@ configure<com.android.build.api.dsl.ApplicationExtension> {
         ndk { abiFilters += abis }
     }
 
+    signingConfigs {
+        if (signingProps != null) create("release") {
+            storeFile = file(signingProps.getProperty("storeFile"))
+            storePassword = signingProps.getProperty("storePassword")
+            keyAlias = signingProps.getProperty("keyAlias")
+            keyPassword = signingProps.getProperty("keyPassword")
+        }
+    }
+
     buildTypes {
         release {
+            signingConfig = signingConfigs.findByName("release")
+            isDebuggable = false
             isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }

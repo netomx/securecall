@@ -90,7 +90,9 @@ App::App(asio::io_context& ioc, Config cfg)
       ip_auth_(20, 1.0 / 30, cfg_.rate_limits),
       ip_register_(5, 1.0 / 600, cfg_.rate_limits),
       account_auth_(10, 1.0 / 60, cfg_.rate_limits),
-      friend_reqs_(20, 1.0 / 180, cfg_.rate_limits) {
+      friend_reqs_(20, 1.0 / 180, cfg_.rate_limits),
+      account_calls_(20, 1.0 / 20, cfg_.rate_limits),
+      account_changes_(5, 1.0 / 300, cfg_.rate_limits) {
     dummy_hash_ = crypto::hash_secret(crypto::b64url(crypto::random_bytes(16)));
     ops_ = {
         {"ping", {&App::op_ping, false}},
@@ -276,6 +278,8 @@ void App::prune_limits() {
         ip_register_.prune();
         account_auth_.prune();
         friend_reqs_.prune();
+        account_calls_.prune();
+        account_changes_.prune();
         prune_limits();
     });
 }
@@ -453,6 +457,7 @@ void App::op_set_key(Request r) {
     auto ik = crypto::from_b64url(str_param(r.body, "ik", 1, 64));
     if (!ik || !crypto::is_valid_identity_key(*ik)) throw ApiError("invalid_key");
     auto uid = *r.session->user_id;
+    if (!account_changes_.take(std::to_string(uid))) throw ApiError("rate_limited");
     bool changed = store_.set_identity_key(uid, *ik);
     auto me = current_user(r);
     if (changed)
@@ -470,6 +475,7 @@ void App::op_get_key(Request r) {
 
 void App::op_regen_id(Request r) {
     auto me = current_user(r);
+    if (!account_changes_.take(std::to_string(me.id))) throw ApiError("rate_limited");
     auto new_id = store_.regenerate_uuid(me.id);
     notify_friends(me.id, event("friend_id_changed", {{"old_id", me.uuid}, {"new_id", new_id}}));
     reply(r, {{"user_id", new_id}});
@@ -561,6 +567,7 @@ void App::op_contacts(Request r) {
 // Media
 
 void App::op_turn(Request r) {
+    if (!account_calls_.take(std::to_string(*r.session->user_id), 0.5)) throw ApiError("rate_limited");
     auto expiry = static_cast<int64_t>(std::time(nullptr)) + cfg_.turn_ttl;
     auto username = std::to_string(expiry) + ":" + crypto::b64url(crypto::random_bytes(9));
     const auto& host = cfg_.turn_host;
@@ -668,6 +675,7 @@ void App::op_call(Request r) {
     const auto& call_id = str_param(r.body, "call_id", 1, 64);
     const auto& msg = str_param(r.body, "msg", 1, kMaxHandshake);
     if (!crypto::is_uuid(call_id) || calls_.count(call_id)) throw ApiError("bad_request");
+    if (!account_calls_.take(std::to_string(me.id))) throw ApiError("rate_limited");
     if (store_.relation(me.id, other.id) != Relation::friends) throw ApiError("not_found");
     if (user_call_.count(me.id)) throw ApiError("in_call");
     if (user_call_.count(other.id)) throw ApiError("busy");

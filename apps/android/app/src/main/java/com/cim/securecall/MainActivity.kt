@@ -11,6 +11,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
+import com.cim.securecall.call.CallNotifications
 import com.cim.securecall.data.parseFriendId
 import com.cim.securecall.ui.AppRoot
 import com.cim.securecall.ui.theme.KalloqTheme
@@ -23,6 +24,9 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        // No screenshots, screen recordings or recent-apps thumbnails anywhere in the app (call screen,
+        // recovery code, verification QR, contact list).
+        window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
         if (savedInstanceState == null) handleIntent(intent)
         // While a call is ringing or ongoing: show over the lock screen, wake the screen, keep it on.
         lifecycleScope.launch {
@@ -52,6 +56,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun handleIntent(intent: Intent?) {
         if (intent?.action == ACTION_ANSWER) {
+            val token = CallNotifications.answerToken
+            if (token == null || intent.getStringExtra(EXTRA_ANSWER_TOKEN) != token) return
             // "Answer" on the incoming-call notification. Without the microphone permission the call
             // screen's own answer button asks for it.
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
@@ -65,6 +71,7 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         const val ACTION_ANSWER = "com.cim.securecall.ANSWER"
+        const val EXTRA_ANSWER_TOKEN = "answer_token"
     }
 
     @Suppress("DEPRECATION")
@@ -76,8 +83,7 @@ class MainActivity : AppCompatActivity() {
             val flags = WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
             if (on) window.addFlags(flags) else window.clearFlags(flags)
         }
-        // FLAG_SECURE: the call screen stays black in screenshots and screen recordings.
-        val keep = WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON or WindowManager.LayoutParams.FLAG_SECURE
+        val keep = WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
         if (on) window.addFlags(keep) else window.clearFlags(keep)
     }
 }

@@ -37,6 +37,9 @@ class LocalStore(context: Context) {
         get() = getSecret(KEY_SEED)
         set(value) = putSecret(KEY_SEED, value)
 
+    /** A seed is stored, even if [identitySeed] cannot decrypt it (Keystore key lost): never replace it silently. */
+    val hasIdentitySeed: Boolean get() = prefs.contains(KEY_SEED)
+
     var userId: String?
         get() = prefs.getString(KEY_USER_ID, null)
         set(value) = prefs.edit().putString(KEY_USER_ID, value).apply()
@@ -62,21 +65,36 @@ class LocalStore(context: Context) {
             .orEmpty()
 
     fun updateVerifications(change: MutableMap<String, VerifyRecord>.() -> Unit) {
+        // Unreadable records are left alone rather than overwritten with an empty map.
+        check(!prefs.contains(KEY_VERIFY) || getSecret(KEY_VERIFY) != null) { "verifications unreadable" }
         val map = verifications().toMutableMap().apply(change)
         putSecret(KEY_VERIFY, Json.encodeToString<Map<String, VerifyRecord>>(map).encodeToByteArray())
     }
 
+    /**
+     * A contact got a new user id. Copies (never moves, never overwrites) what we know about them, so the server
+     * cannot use a rename to drop a pinned key or to put another contact's key on someone we already know.
+     */
     fun renameContact(oldId: String, newId: String) {
-        updateMap(KEY_ALIASES) { remove(oldId)?.let { put(newId, it) } }
-        updateMap(KEY_PINS) { remove(oldId)?.let { put(newId, it) } }
-        updateVerifications { remove(oldId)?.let { put(newId, it) } }
+        if (oldId == newId || newId in pins() || newId in aliases() || newId in verifications()) return
+        updateMap(KEY_ALIASES) { get(oldId)?.let { put(newId, it) } }
+        updateMap(KEY_PINS) { get(oldId)?.let { put(newId, it) } }
+        runCatching { updateVerifications { get(oldId)?.let { put(newId, it) } } }
+    }
+
+    /** Incoming call ids already handled, so a replayed offer does not ring again. Last [SEEN_CALLS] only. */
+    fun callSeen(callId: String): Boolean = prefs.getString(KEY_SEEN_CALLS, "").orEmpty().split(',').contains(callId)
+
+    fun markCallSeen(callId: String) {
+        val seen = prefs.getString(KEY_SEEN_CALLS, "").orEmpty().split(',').filter { it.isNotEmpty() && it != callId }
+        prefs.edit().putString(KEY_SEEN_CALLS, (seen.takeLast(SEEN_CALLS - 1) + callId).joinToString(",")).apply()
     }
 
     fun clearSession() = prefs.edit().remove(KEY_TOKEN).apply()
 
     /** New account on this device: forget the previous identity and contacts. */
     fun resetAccount() = prefs.edit().remove(KEY_TOKEN).remove(KEY_SEED).remove(KEY_ALIASES).remove(KEY_PINS).remove(KEY_VERIFY)
-        .remove(KEY_USER_ID).remove(KEY_USERNAME).apply()
+        .remove(KEY_SEEN_CALLS).remove(KEY_USER_ID).remove(KEY_USERNAME).apply()
 
     private fun readMap(key: String): Map<String, String> {
         val raw = prefs.getString(key, null) ?: return emptyMap()
@@ -137,5 +155,7 @@ class LocalStore(context: Context) {
         const val KEY_ALIASES = "aliases"
         const val KEY_PINS = "pins"
         const val KEY_VERIFY = "verifications"
+        const val KEY_SEEN_CALLS = "seen_calls"
+        const val SEEN_CALLS = 200
     }
 }

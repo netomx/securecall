@@ -2,8 +2,6 @@
 
 package com.cim.securecall.ui
 
-import android.app.Activity
-import android.view.WindowManager
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -42,7 +40,6 @@ import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -217,12 +214,6 @@ fun RecoverScreen(
 @Composable
 fun RecoveryCodeScreen(code: String, onDone: () -> Unit) {
     val context = LocalContext.current
-    // Keep the code out of screenshots and the recent-apps thumbnail.
-    DisposableEffect(Unit) {
-        val window = (context as? Activity)?.window
-        window?.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
-        onDispose { window?.clearFlags(WindowManager.LayoutParams.FLAG_SECURE) }
-    }
     var saved by rememberSaveable { mutableStateOf(false) }
 
     AuthColumn {

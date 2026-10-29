@@ -128,9 +128,16 @@ object CallNotifications {
         )
     }
 
+    /**
+     * Random per ring, carried by the notification's Answer intent. MainActivity is exported (invite links), so
+     * without it any app could send ACTION_ANSWER and pick up the call.
+     */
+    @Volatile var answerToken: String? = null
+
     private fun openApp(context: Context, action: String? = null): PendingIntent = PendingIntent.getActivity(
         context, if (action == null) 0 else 3,
-        Intent(context, MainActivity::class.java).setAction(action).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP),
+        Intent(context, MainActivity::class.java).setAction(action).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            .apply { if (action != null) putExtra(MainActivity.EXTRA_ANSWER_TOKEN, answerToken) },
         PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
     )
 
