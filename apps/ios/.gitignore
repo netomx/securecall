@@ -1,0 +1,19 @@
+# Xcode
+build/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+*.xcscmblueprint
+*.xccheckout
+project.xcworkspace/xcuserdata/
+
+# Swift Package Manager
+.build/
+.swiftpm/
+Package.resolved
+
+# Firmas y perfiles (nunca al repo)
+*.mobileprovision
+*.p8
+*.p12
+*.certSigningRequest

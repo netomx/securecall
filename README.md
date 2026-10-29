@@ -13,6 +13,7 @@ Llamadas de voz 1 a 1 cifradas de extremo a extremo, entre teléfonos.
 | `apps/core/` | Criptografía compartida en C++ (Android vía JNI, iOS en el futuro) |
 | `apps/server/` | Servidor de señalización en C++ (`sc-server`) — [protocolo](docs/PROTOCOLO.md) |
 | `apps/android/` | App Android (Kotlin, Jetpack Compose) |
+| `apps/ios/` | App iOS (Swift, SwiftUI) — [arranque](docs/IOS_ARRANQUE.md) |
 | `deploy/` | Configuración de nginx, coturn y systemd |
 | `docs/` | [Arquitectura](docs/ARQUITECTURA.md) |
 
