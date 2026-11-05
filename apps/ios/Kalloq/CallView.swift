@@ -24,6 +24,9 @@ struct CallView: View {
                 Text(status)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
+                if call.phase == .active, !call.reconnecting, !call.onHold, !call.peerOnHold, let rtt = call.rttMs {
+                    QualityChip(rttMs: rtt).padding(.top, 4)
+                }
             }
 
             if let code = call.code, call.phase != .ended {
@@ -121,6 +124,33 @@ struct CallView: View {
                 }
             }
         }
+    }
+}
+
+/// Round trip of the audio: what the delay in the conversation feels like. Same thresholds as Android.
+private struct QualityChip: View {
+    let rttMs: Int
+
+    private var grade: (color: Color, label: LocalizedStringKey) {
+        switch rttMs {
+        case ..<150: return (Color(red: 0.13, green: 0.77, blue: 0.37), "Excelente")
+        case ..<300: return (Color(red: 0.52, green: 0.80, blue: 0.09), "Buena")
+        case ..<500: return (Color(red: 0.96, green: 0.62, blue: 0.04), "Regular")
+        default: return (Color(red: 0.94, green: 0.27, blue: 0.27), "Mala")
+        }
+    }
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Circle().fill(grade.color).frame(width: 10, height: 10)
+            (Text(grade.label) + Text(verbatim: " · \(rttMs) ms"))
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(grade.color)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .background(.quaternary, in: Capsule())
+        .accessibilityElement(children: .combine)
     }
 }
 

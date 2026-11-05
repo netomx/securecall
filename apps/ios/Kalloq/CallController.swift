@@ -21,6 +21,7 @@ struct CallUi: Equatable, Identifiable {
     var onHold = false         // the system put our call on hold (a phone call came in)
     var peerOnHold = false     // the other phone did
     var reconnecting = false   // the audio path is down; it ends if it does not come back
+    var rttMs: Int?            // round trip of the audio, for the quality indicator
 }
 
 /// What the call needs to know about the account and its contacts.
@@ -62,6 +63,7 @@ final class CallController: ObservableObject {
     private weak var context: CallContext?
 
     private let engine = CallEngine()
+    private var statsTask: Task<Void, Never>?
     private let systemCall = SystemCall()
 
     private var handshake: NoiseHandshake?
@@ -463,6 +465,8 @@ final class CallController: ObservableObject {
         ringTimeout?.cancel()
         reconnectTimeout?.cancel()
         mediaRestart?.cancel()
+        statsTask?.cancel()
+        statsTask = nil
         ringTimeout = nil
         reconnectTimeout = nil
         mediaDown = false
@@ -504,6 +508,15 @@ extension CallController: CallEngineListener {
             call?.phase = .active
             call?.connectedAt = Date()
             systemCall.reportConnected()
+        }
+        if statsTask == nil {
+            statsTask = Task { [weak self] in
+                while !Task.isCancelled {
+                    guard let self else { return }
+                    if let rtt = await self.engine.rttMs() { self.call?.rttMs = rtt }
+                    try? await Task.sleep(nanoseconds: 2_000_000_000)
+                }
+            }
         }
     }
 

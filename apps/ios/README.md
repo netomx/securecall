@@ -38,7 +38,7 @@ xcodebuild -project Kalloq.xcodeproj -scheme Kalloq \
 | `Kalloq/CallEngine.swift` | WebRTC solo audio (Opus, DTLS-SRTP), ICE por goteo, cola de candidatos remotos |
 | `Kalloq/SystemCall.swift` | CallKit: pantalla de llamada del sistema, espera, y el audio que solo arranca en `didActivate` |
 | `Kalloq/CallController.swift` | Una llamada a la vez: handshake Noise, ICE cifrado, silenciar, altavoz, colgar |
-| `Kalloq/CallView.swift` | Pantalla de llamada con el código de seguridad de 6 dígitos |
+| `Kalloq/CallView.swift` | Pantalla de llamada con el código de seguridad de 6 dígitos y la calidad (RTT del audio, como en Android) |
 | `Kalloq/PushRegistry.swift` | PushKit: token VoIP y el push que despierta la app; la llamada se reporta a CallKit antes de que regrese el delegado |
 | `Kalloq/SelfCheck.swift` | Los vectores de referencia, para comprobarlos desde Ajustes |
 | `Kalloq/Log.swift` | Registros de push y llamadas, sin tokens, IDs ni nombres (Console.app, subsistema `com.cim.securecall`) |
@@ -119,9 +119,6 @@ Cómo funciona el push: el aviso no dice quién llama, así que al llegar la app
 una llamada genérica "Kalloq", se reconecta, y le pone nombre cuando llega `call_incoming`. Si la
 persona contesta o cuelga antes, se recuerda y se aplica al llegar la oferta; si en 20 s no llega,
 deja de sonar.
-
-Pendiente conocido dentro de lo ya hecho: el indicador de calidad de la llamada (el RTT que
-Android muestra).
 
 **El simulador no tiene telefonía:** CallKit resetea su proveedor en cuanto se reporta una llamada
 entrante, así que la app se queda con la llamada en su propia pantalla y arranca el audio ella misma

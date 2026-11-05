@@ -82,6 +82,22 @@ final class CallEngine: NSObject {
         return try await createOffer()
     }
 
+    /// Round trip of the audio path in milliseconds, nil before it is known. The same reading as
+    /// Android's `rttMs`: the selected candidate pair's `currentRoundTripTime`.
+    func rttMs() async -> Int? {
+        guard let connection else { return nil }
+        let report = await withCheckedContinuation { (c: CheckedContinuation<RTCStatisticsReport, Never>) in
+            connection.statistics { c.resume(returning: $0) }
+        }
+        let stats = Array(report.statistics.values)
+        let pairId = stats.first { $0.type == "transport" }?.values["selectedCandidatePairId"] as? String
+        let pair = stats.first { $0.id == pairId }
+            ?? stats.first { $0.type == "candidate-pair" && ($0.values["nominated"] as? NSNumber)?.boolValue == true
+                && $0.values["state"] as? String == "succeeded" }
+        guard let rtt = (pair?.values["currentRoundTripTime"] as? NSNumber)?.doubleValue else { return nil }
+        return Int(rtt * 1000)
+    }
+
     /// Candidates can arrive before the remote description: queue them until then.
     func addRemoteCandidate(_ candidate: RTCIceCandidate) {
         guard let connection else { return }

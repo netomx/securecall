@@ -211,6 +211,16 @@
         }
       }
     },
+    "Buena": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Good"
+          }
+        }
+      }
+    },
     "Cambiar contraseña": {
       "localizations": {
         "en": {
@@ -841,6 +851,16 @@
         }
       }
     },
+    "Excelente": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Excellent"
+          }
+        }
+      }
+    },
     "Falló una llamada porque su verificación por QR con ese contacto no coincide. Verifiquen de nuevo.": {
       "localizations": {
         "en": {
@@ -1117,6 +1137,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Both phones must show this code:"
+          }
+        }
+      }
+    },
+    "Mala": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Poor"
           }
         }
       }
@@ -1427,6 +1457,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Recover account"
+          }
+        }
+      }
+    },
+    "Regular": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fair"
           }
         }
       }
