@@ -6,12 +6,17 @@
 <title>Kalloq · Aviso de privacidad</title>
 <style>
   body { font-family: system-ui, sans-serif; max-width: 42rem; margin: 3rem auto; padding: 0 1rem; line-height: 1.55; color: #222; background: #fff; }
-  @media (prefers-color-scheme: dark) { body { color: #eee; background: #111; } a { color: #8ab4f8; } }
+  @media (prefers-color-scheme: dark) { body { color: #eee; background: #111; } a { color: #8ab4f8; } .summary { background: #1b2b2a; } th, td { border-color: #444; } }
   h1 { margin-bottom: .2rem; }
   h2 { margin-top: 2rem; font-size: 1.15rem; }
   .meta { color: #888; margin-top: 0; }
+  .summary { background: #eef7f6; border-radius: .5rem; padding: .75rem 1rem; }
+  .summary ul { margin: .25rem 0; padding-left: 1.2rem; }
   hr { margin: 3rem 0; border: none; border-top: 1px solid #8884; }
   li { margin: .25rem 0; }
+  table { border-collapse: collapse; width: 100%; font-size: .95rem; }
+  th, td { border: 1px solid #ccc; padding: .35rem .5rem; text-align: left; vertical-align: top; }
+  td code { word-break: break-all; }
 </style>
 </head>
 <body>
@@ -19,12 +24,23 @@
 
 <section id="es" lang="es">
 <h1>Aviso de privacidad de Kalloq</h1>
-<p class="meta">Última actualización: 29 de octubre de 2026</p>
+<p class="meta">Última actualización: 5 de noviembre de 2026</p>
 
-<p>Este aviso explica qué datos personales tratamos cuando usa Kalloq, una aplicación de llamadas de voz cifradas de extremo a extremo entre dos personas, para qué los utilizamos y cómo puede ejercer sus derechos. Kalloq está diseñada para tratar el mínimo de datos: no pide correo, número de teléfono ni nombre real, y no tenemos forma técnica de escuchar sus llamadas.</p>
+<div class="summary">
+<p><strong>En resumen:</strong></p>
+<ul>
+  <li>Kalloq hace llamadas de voz cifradas de extremo a extremo: nadie más, ni nosotros, puede escucharlas.</li>
+  <li>Solo pide un nombre de usuario y una contraseña. No pide correo, número de teléfono ni nombre real.</li>
+  <li>No guardamos el audio ni un historial de llamadas. No hay publicidad, analítica ni rastreadores.</li>
+  <li>Puede borrar su cuenta en cualquier momento desde la aplicación.</li>
+</ul>
+</div>
+
+<p>Este aviso explica qué datos personales tratamos cuando usa Kalloq, una aplicación de llamadas de voz cifradas de extremo a extremo entre dos personas, para qué los utilizamos y cómo puede ejercer sus derechos, conforme a la Ley Federal de Protección de Datos Personales en Posesión de los Particulares. Kalloq está diseñada para tratar el mínimo de datos y no tenemos forma técnica de escuchar sus llamadas.</p>
 
 <h2>Quién es responsable de sus datos</h2>
-<p>Mario Ernesto Villarreal Pérez, conocido comercialmente como Catálogo Industrial Monterrey, es el responsable del tratamiento de sus datos personales. Nuestro domicilio es calle Santa Bárbara 1983, colonia Jardines de La Silla, Juárez, Nuevo León, C.P. 67286, México. Puede contactarnos en <a href="mailto:appstore@catalogomty.com">appstore@catalogomty.com</a> y consultar nuestro sitio <a href="https://www.catalogomty.com">www.catalogomty.com</a>.</p>
+<p>Mario Ernesto Villarreal Pérez, conocido comercialmente como Catálogo Industrial Monterrey, es el responsable de la aplicación Kalloq para Android y iPhone (identificador <code>com.cim.securecall</code>) y del tratamiento de sus datos personales, con domicilio en calle Santa Bárbara 1983, colonia Jardines de La Silla, Ciudad Juárez, municipio de Juárez, C.P. 67286, Nuevo León, México.</p>
+<p>Portal de internet: <a href="https://www.catalogomty.com">www.catalogomty.com</a> · Correo: <a href="mailto:appstore@catalogomty.com">appstore@catalogomty.com</a></p>
 
 <h2>Qué datos tratamos</h2>
 <ul>
@@ -48,22 +64,34 @@
 </ul>
 <p>No tenemos finalidades secundarias: no usamos sus datos para mercadotecnia, publicidad ni venta de perfiles.</p>
 
-<h2>Qué se queda en su teléfono</h2>
-<p>Su llave privada de identidad, los nombres que asigna a sus contactos y si los verificó se guardan cifrados únicamente en su dispositivo; no los recibimos. La aplicación de Android impide capturas de pantalla.</p>
+<h2>Información que se queda en su teléfono</h2>
+<p>Su llave privada de identidad, los nombres que asigna a sus contactos y si los verificó se guardan cifrados únicamente en su dispositivo; no los recibimos. Esta información no se incluye en los respaldos de Android ni de iCloud y se elimina por completo al desinstalar la aplicación o al cerrar sesión. La aplicación de Android impide capturas de pantalla.</p>
 
-<h2>Permisos de la aplicación</h2>
+<h2>Permisos que solicita la aplicación</h2>
+<p>En Android:</p>
+<table>
+  <tr><th>Permiso</th><th>Para qué se usa</th></tr>
+  <tr><td>Micrófono (<code>RECORD_AUDIO</code>)</td><td>Transmitir su voz, solo durante una llamada.</td></tr>
+  <tr><td>Cámara (<code>CAMERA</code>)</td><td>Leer el código QR de un contacto para agregarlo o verificarlo. Las imágenes no se guardan ni se envían.</td></tr>
+  <tr><td>Notificaciones y pantalla completa (<code>POST_NOTIFICATIONS</code>, <code>USE_FULL_SCREEN_INTENT</code>)</td><td>Avisarle de una llamada entrante, incluso con la pantalla bloqueada, y mostrar la llamada en curso.</td></tr>
+  <tr><td>Servicio en primer plano (<code>FOREGROUND_SERVICE</code>, <code>…_MICROPHONE</code>, <code>…_PHONE_CALL</code>)</td><td>Mantener la llamada activa si sale de la aplicación o apaga la pantalla. Termina al colgar.</td></tr>
+  <tr><td>Llamadas del sistema (<code>MANAGE_OWN_CALLS</code>)</td><td>Que Android trate a Kalloq como una llamada: ponerla en espera si entra una llamada telefónica y contestar desde el auto, un reloj o los audífonos.</td></tr>
+  <tr><td>Bluetooth (<code>BLUETOOTH</code>, <code>BLUETOOTH_CONNECT</code>)</td><td>Usar audífonos o el auto durante la llamada.</td></tr>
+  <tr><td>Red y audio (<code>INTERNET</code>, <code>ACCESS_NETWORK_STATE</code>, <code>CHANGE_NETWORK_STATE</code>, <code>MODIFY_AUDIO_SETTINGS</code>, <code>WAKE_LOCK</code>, <code>VIBRATE</code>)</td><td>Conectarse al servidor, mantener la llamada al cambiar entre Wi-Fi y datos, elegir auricular o altavoz, y sonar o vibrar al recibir una llamada.</td></tr>
+</table>
+<p>En iPhone, la aplicación pide acceso al micrófono (para las llamadas) y a la cámara (solo para leer códigos QR), y usa CallKit para mostrar las llamadas como llamadas del sistema. Puede retirar cualquier permiso desde los ajustes del teléfono; sin el micrófono no es posible hacer llamadas.</p>
+
+<h2>Herramientas y servicios de terceros</h2>
 <ul>
-  <li><strong>Micrófono:</strong> solo durante una llamada.</li>
-  <li><strong>Notificaciones y pantalla completa:</strong> para avisarle de una llamada entrante, incluso con la pantalla bloqueada.</li>
-  <li><strong>Llamadas del sistema y Bluetooth:</strong> para que Android o iOS traten a Kalloq como una llamada (ponerla en espera si entra una llamada telefónica, contestar desde el auto o los audífonos).</li>
+  <li>La aplicación usa bibliotecas de código abierto que funcionan dentro del teléfono y no envían información a nadie: WebRTC (audio de las llamadas), ZXing (códigos QR), Tink (cifrado de los datos locales en Android), OkHttp y las bibliotecas de Android Jetpack.</li>
+  <li><strong>Google y Apple.</strong> Para despertar su teléfono cuando alguien le llama usamos Firebase Cloud Messaging de Google en Android y el servicio de notificaciones de Apple (APNs) en iPhone. El aviso solo indica que hay una llamada; no incluye quién llama ni ningún otro dato. Google trata el token del dispositivo conforme a su <a href="https://policies.google.com/privacy?hl=es-419">política de privacidad</a>; Apple trata el token de su iPhone conforme a la <a href="https://www.apple.com/mx/legal/privacy/">suya</a>.</li>
+  <li>La descarga e instalación se hacen a través de Google Play o del App Store. La información que Google o Apple recaben con ese motivo se rige por sus propias políticas de privacidad.</li>
+  <li><strong>Infraestructura.</strong> Los proveedores que alojan nuestros servidores pueden procesar datos para prestar el servicio; esa infraestructura puede encontrarse fuera de México.</li>
 </ul>
+<p>No vendemos datos. Si alguna transferencia requiriera su consentimiento, se lo solicitaremos antes; las comunicaciones exigidas por la ley se atenderán dentro de su alcance.</p>
 
 <h2>Cómo protegemos la información</h2>
 <p>Las conexiones con el servidor usan TLS 1.3. El audio va cifrado de extremo a extremo (DTLS-SRTP, con un intercambio de llaves Noise autenticado por las llaves de identidad de ambos participantes). Cuando no hay conexión directa entre los teléfonos, la llamada pasa por nuestro servidor de retransmisión (TURN), que solo ve datos cifrados que no puede descifrar. El servidor conoce una llamada únicamente mientras está en curso y no guarda con quién habló ni cuánto duró. El código es abierto (AGPL-3.0) y puede revisarse en <a href="https://github.com/netomx/securecall">GitHub</a>. Ningún sistema elimina por completo el riesgo de acceso indebido.</p>
-
-<h2>Con quién se comparte la información</h2>
-<p><strong>Google y Apple.</strong> Para despertar su teléfono cuando alguien le llama usamos Firebase Cloud Messaging de Google en Android y el servicio de notificaciones de Apple (APNs) en iPhone. El aviso solo indica que hay una llamada; no incluye quién llama ni ningún otro dato. Google trata el token del dispositivo y la distribución de la aplicación por Google Play conforme a su <a href="https://policies.google.com/privacy?hl=es-419">política de privacidad</a>; Apple trata el token de su iPhone conforme a la <a href="https://www.apple.com/mx/legal/privacy/">suya</a>.</p>
-<p><strong>Infraestructura.</strong> Los proveedores que alojan nuestros servidores pueden procesar datos para prestar el servicio; esa infraestructura puede encontrarse fuera de México. No vendemos datos. Si alguna transferencia requiriera su consentimiento, se lo solicitaremos antes; las comunicaciones exigidas por la ley se atenderán dentro de su alcance.</p>
 
 <h2>Durante cuánto tiempo conservamos los datos</h2>
 <p>Los datos de su cuenta se conservan mientras la cuenta exista. Al eliminarla se borran de inmediato del servidor; las copias de respaldo se conservan 14 días y después se eliminan. El servidor web no guarda registros de acceso; los límites de uso por dirección IP se aplican solo en memoria. El servidor de retransmisión de audio puede anotar la dirección IP de una conexión en registros técnicos que se rotan y eliminan periódicamente y no se asocian a su cuenta. Lo anterior, salvo conservación o bloqueo exigidos por una obligación legal.</p>
@@ -72,32 +100,43 @@
 <p>En la aplicación abra <strong>Ajustes → Eliminar cuenta</strong> y confirme con su contraseña. Su cuenta, llave pública, contactos y sesiones se borran del servidor y sus contactos dejan de verle. Si ya no tiene acceso a la aplicación, escríbanos a <a href="mailto:appstore@catalogomty.com">appstore@catalogomty.com</a> indicando su nombre de usuario.</p>
 
 <h2>Cómo ejercer sus derechos de privacidad (ARCO)</h2>
-<p>Puede solicitar acceso, rectificación, cancelación u oposición al tratamiento de sus datos mediante <a href="mailto:appstore@catalogomty.com">appstore@catalogomty.com</a>. Indique su nombre, un medio para responderle, el derecho que desea ejercer y la información que permita localizar sus datos (por ejemplo, su nombre de usuario en Kalloq). Deberá acreditar su identidad o la de su representante; para rectificar, describa la corrección. No envíe su contraseña ni su código de recuperación.</p>
+<p>Puede solicitar acceso, rectificación, cancelación u oposición al tratamiento de sus datos por correo electrónico a <a href="mailto:appstore@catalogomty.com">appstore@catalogomty.com</a> o por correo postal al domicilio indicado arriba. Indique su nombre, un medio para responderle, el derecho que desea ejercer y la información que permita localizar sus datos (por ejemplo, su nombre de usuario en Kalloq). Deberá acreditar su identidad o la de su representante; para rectificar, describa la corrección. No envíe su contraseña ni su código de recuperación.</p>
 <p>Responderemos en veinte días hábiles desde la recepción de la solicitud. Si procede, la haremos efectiva dentro de los quince días hábiles siguientes a la comunicación. Los plazos pueden ampliarse una vez por un periodo igual cuando exista justificación. La cancelación está sujeta a las excepciones y periodos de bloqueo legales.</p>
 <p>Si no recibe respuesta o no está conforme, puede acudir a la Secretaría Anticorrupción y Buen Gobierno para solicitar la protección de sus derechos conforme a la legislación aplicable.</p>
 
 <h2>Revocación y limitación del uso de datos</h2>
-<p>Puede revocar su consentimiento o limitar el uso o divulgación de sus datos en <a href="mailto:appstore@catalogomty.com">appstore@catalogomty.com</a>, con el mismo procedimiento anterior, o eliminando su cuenta desde la aplicación. Dejar de tratar los datos necesarios para la cuenta impide prestar el servicio. Puede desactivar las notificaciones en los ajustes de Android; en ese caso solo recibirá llamadas con la aplicación abierta.</p>
+<p>Puede revocar su consentimiento o limitar el uso o divulgación de sus datos con el mismo procedimiento anterior, o eliminando su cuenta desde la aplicación. Dejar de tratar los datos necesarios para la cuenta impide prestar el servicio. Puede desactivar las notificaciones en los ajustes del teléfono; en ese caso solo recibirá llamadas con la aplicación abierta.</p>
 
 <h2>Uso por menores de edad</h2>
-<p>El servicio no está dirigido a menores de dieciocho años. Si considera que hemos recibido datos de una persona menor de edad de manera indebida, escríbanos para revisar el caso y, cuando corresponda, eliminarlos.</p>
+<p>El servicio no está dirigido a menores de dieciocho años y no recabamos de forma intencional datos de menores. Si considera que hemos recibido datos de una persona menor de edad de manera indebida, escríbanos para revisar el caso y, cuando corresponda, eliminarlos.</p>
 
 <h2>Cambios y consulta de este aviso</h2>
-<p>Los cambios a este aviso se darán a conocer en <a href="https://call.l8.nz/privacy">https://call.l8.nz/privacy</a>, identificando la fecha de actualización. Puede solicitar una copia vigente en <a href="mailto:appstore@catalogomty.com">appstore@catalogomty.com</a>. Si un cambio requiere un nuevo consentimiento, lo solicitaremos antes de aplicar ese tratamiento.</p>
+<p>Si una versión futura de la aplicación cambia la forma en que maneja la información, actualizaremos este aviso antes de publicarla y cambiaremos la fecha de arriba. La versión vigente siempre estará en <a href="https://call.l8.nz/privacy">https://call.l8.nz/privacy</a>, y puede solicitar una copia en <a href="mailto:appstore@catalogomty.com">appstore@catalogomty.com</a>. Si un cambio requiere un nuevo consentimiento, lo solicitaremos antes de aplicar ese tratamiento.</p>
 
-<p class="meta">Contacto de privacidad: <a href="mailto:appstore@catalogomty.com">appstore@catalogomty.com</a></p>
+<p class="meta">Kalloq · Catálogo Industrial Monterrey · Nuevo León, México · <a href="mailto:appstore@catalogomty.com">appstore@catalogomty.com</a></p>
 </section>
 
 <hr>
 
 <section id="en" lang="en">
 <h1>Kalloq Privacy Notice</h1>
-<p class="meta">Last updated: October 29, 2026</p>
+<p class="meta">Last updated: November 5, 2026</p>
 
-<p>This notice explains what personal data we process when you use Kalloq, an app for end-to-end encrypted voice calls between two people, why we use it and how you can exercise your rights. Kalloq is designed to process as little data as possible: it does not ask for an email, phone number or real name, and we have no technical way to listen to your calls. The Spanish version above prevails under Mexican law.</p>
+<div class="summary">
+<p><strong>In short:</strong></p>
+<ul>
+  <li>Kalloq makes end-to-end encrypted voice calls: nobody else, including us, can listen to them.</li>
+  <li>It only asks for a username and a password. No email, phone number or real name.</li>
+  <li>We keep no call audio or call history. There are no ads, analytics or trackers.</li>
+  <li>You can delete your account at any time from the app.</li>
+</ul>
+</div>
+
+<p>This notice explains what personal data we process when you use Kalloq, an app for end-to-end encrypted voice calls between two people, why we use it and how you can exercise your rights under Mexico's Federal Law on the Protection of Personal Data Held by Private Parties. Kalloq is designed to process as little data as possible, and we have no technical way to listen to your calls. The Spanish version above prevails under Mexican law.</p>
 
 <h2>Who is responsible for your data</h2>
-<p>Mario Ernesto Villarreal Pérez, doing business as Catálogo Industrial Monterrey, is responsible for processing your personal data. Address: calle Santa Bárbara 1983, colonia Jardines de La Silla, Juárez, Nuevo León, 67286, Mexico. Contact: <a href="mailto:appstore@catalogomty.com">appstore@catalogomty.com</a> · <a href="https://www.catalogomty.com">www.catalogomty.com</a>.</p>
+<p>Mario Ernesto Villarreal Pérez, doing business as Catálogo Industrial Monterrey, is responsible for the Kalloq app for Android and iPhone (identifier <code>com.cim.securecall</code>) and for processing your personal data. Address: calle Santa Bárbara 1983, colonia Jardines de La Silla, Ciudad Juárez, municipality of Juárez, 67286, Nuevo León, Mexico.</p>
+<p>Website: <a href="https://www.catalogomty.com">www.catalogomty.com</a> · Email: <a href="mailto:appstore@catalogomty.com">appstore@catalogomty.com</a></p>
 
 <h2>What data we process</h2>
 <ul>
@@ -114,21 +153,33 @@
 <p>Only to provide the service: create and authenticate your account and let you recover it; connect you with your contacts and deliver the public keys that make encryption possible; set up calls and alert you to incoming ones; prevent abuse (usage limits per account and IP address) and keep the service secure; and handle your requests and legal obligations. We have no secondary purposes: no marketing, advertising or profile selling.</p>
 
 <h2>What stays on your phone</h2>
-<p>Your private identity key, the names you give your contacts and whether you verified them are stored encrypted only on your device; we never receive them. The Android app blocks screenshots.</p>
+<p>Your private identity key, the names you give your contacts and whether you verified them are stored encrypted only on your device; we never receive them. This information is not included in Android or iCloud backups and is fully deleted when you uninstall the app or sign out. The Android app blocks screenshots.</p>
 
-<h2>App permissions</h2>
+<h2>Permissions the app requests</h2>
+<p>On Android:</p>
+<table>
+  <tr><th>Permission</th><th>What it is used for</th></tr>
+  <tr><td>Microphone (<code>RECORD_AUDIO</code>)</td><td>Sending your voice, only during a call.</td></tr>
+  <tr><td>Camera (<code>CAMERA</code>)</td><td>Reading a contact's QR code to add or verify them. Images are neither stored nor sent.</td></tr>
+  <tr><td>Notifications and full screen (<code>POST_NOTIFICATIONS</code>, <code>USE_FULL_SCREEN_INTENT</code>)</td><td>Alerting you to an incoming call, including on the lock screen, and showing the ongoing call.</td></tr>
+  <tr><td>Foreground service (<code>FOREGROUND_SERVICE</code>, <code>…_MICROPHONE</code>, <code>…_PHONE_CALL</code>)</td><td>Keeping the call alive when you leave the app or turn off the screen. It stops when you hang up.</td></tr>
+  <tr><td>System calls (<code>MANAGE_OWN_CALLS</code>)</td><td>Letting Android treat Kalloq as a call: holding it when a phone call comes in and answering from the car, a watch or headphones.</td></tr>
+  <tr><td>Bluetooth (<code>BLUETOOTH</code>, <code>BLUETOOTH_CONNECT</code>)</td><td>Using headphones or the car during the call.</td></tr>
+  <tr><td>Network and audio (<code>INTERNET</code>, <code>ACCESS_NETWORK_STATE</code>, <code>CHANGE_NETWORK_STATE</code>, <code>MODIFY_AUDIO_SETTINGS</code>, <code>WAKE_LOCK</code>, <code>VIBRATE</code>)</td><td>Connecting to the server, keeping the call when switching between Wi-Fi and mobile data, choosing earpiece or speaker, and ringing or vibrating on an incoming call.</td></tr>
+</table>
+<p>On iPhone, the app asks for the microphone (for calls) and the camera (only to read QR codes), and uses CallKit to show calls as system calls. You can withdraw any permission in the phone's settings; without the microphone, calls are not possible.</p>
+
+<h2>Third-party tools and services</h2>
 <ul>
-  <li><strong>Microphone:</strong> only during a call.</li>
-  <li><strong>Notifications and full screen:</strong> to alert you to an incoming call, including on the lock screen.</li>
-  <li><strong>System calls and Bluetooth:</strong> so Android or iOS treats Kalloq as a call (holding it when a phone call comes in, answering from the car or headphones).</li>
+  <li>The app uses open-source libraries that run inside the phone and send information to no one: WebRTC (call audio), ZXing (QR codes), Tink (encryption of local data on Android), OkHttp and the Android Jetpack libraries.</li>
+  <li><strong>Google and Apple.</strong> We use Google's Firebase Cloud Messaging on Android and the Apple Push Notification service (APNs) on iPhone to wake your phone when someone calls. The notice only says there is a call; it does not include who is calling or any other data. Google handles the device token under its <a href="https://policies.google.com/privacy">privacy policy</a>; Apple handles your iPhone's token under <a href="https://www.apple.com/legal/privacy/">its own</a>.</li>
+  <li>The app is downloaded and installed through Google Play or the App Store. Any information Google or Apple collect for that purpose is governed by their own privacy policies.</li>
+  <li><strong>Infrastructure.</strong> Providers hosting our servers may process data to provide the service; that infrastructure may be located outside Mexico.</li>
 </ul>
+<p>We do not sell data. If a transfer required your consent we would ask first; disclosures required by law will be handled within their scope.</p>
 
 <h2>How we protect it</h2>
 <p>Connections to the server use TLS 1.3. Audio is end-to-end encrypted (DTLS-SRTP, with a Noise key exchange authenticated by both participants' identity keys). When phones cannot connect directly, the call goes through our relay (TURN) server, which only sees encrypted data it cannot decrypt. The server only knows about a call while it is in progress and does not keep who you talked to or for how long. The code is open source (AGPL-3.0) on <a href="https://github.com/netomx/securecall">GitHub</a>. No system fully removes the risk of unauthorized access.</p>
-
-<h2>Who we share it with</h2>
-<p><strong>Google and Apple.</strong> We use Google's Firebase Cloud Messaging on Android and the Apple Push Notification service (APNs) on iPhone to wake your phone when someone calls. The notice only says there is a call; it does not include who is calling or any other data. Google handles the device token and the distribution of the app through Google Play under its <a href="https://policies.google.com/privacy">privacy policy</a>; Apple handles your iPhone's token under <a href="https://www.apple.com/legal/privacy/">its own</a>.</p>
-<p><strong>Infrastructure.</strong> Providers hosting our servers may process data to provide the service; that infrastructure may be located outside Mexico. We do not sell data. If a transfer required your consent we would ask first; disclosures required by law will be handled within their scope.</p>
 
 <h2>How long we keep it</h2>
 <p>Account data is kept while the account exists. Deleting the account removes it from the server immediately; backups are kept for 14 days and then deleted. The web server keeps no access logs; per-IP usage limits are applied in memory only. The audio relay server may record a connection's IP address in technical logs that are rotated and deleted periodically and are not linked to your account. All of this is subject to retention required by law.</p>
@@ -137,15 +188,15 @@
 <p>In the app, open <strong>Settings → Delete account</strong> and confirm with your password. Your account, public key, contacts and sessions are deleted from the server and your contacts no longer see you. If you no longer have access to the app, email <a href="mailto:appstore@catalogomty.com">appstore@catalogomty.com</a> with your username.</p>
 
 <h2>Your rights</h2>
-<p>You can request access, rectification, cancellation or opposition (ARCO rights), revoke your consent or limit the use of your data by writing to <a href="mailto:appstore@catalogomty.com">appstore@catalogomty.com</a> with your name, a way to reply, the right you want to exercise and information to locate your data (such as your Kalloq username). You must prove your identity or that of your representative. Never send your password or recovery code. We reply within twenty business days and, if your request is granted, carry it out within the following fifteen business days; these periods may be extended once when justified. If you receive no answer or disagree, you may contact Mexico's Secretaría Anticorrupción y Buen Gobierno.</p>
+<p>You can request access, rectification, cancellation or opposition (ARCO rights), revoke your consent or limit the use of your data by emailing <a href="mailto:appstore@catalogomty.com">appstore@catalogomty.com</a> or by post to the address above, with your name, a way to reply, the right you want to exercise and information to locate your data (such as your Kalloq username). You must prove your identity or that of your representative. Never send your password or recovery code. We reply within twenty business days and, if your request is granted, carry it out within the following fifteen business days; these periods may be extended once when justified. If you receive no answer or disagree, you may contact Mexico's Secretaría Anticorrupción y Buen Gobierno.</p>
 
 <h2>Minors</h2>
-<p>The service is not directed at people under eighteen. If you believe we received a minor's data improperly, write to us so we can review and, where appropriate, delete it.</p>
+<p>The service is not directed at people under eighteen and we do not knowingly collect minors' data. If you believe we received a minor's data improperly, write to us so we can review and, where appropriate, delete it.</p>
 
 <h2>Changes</h2>
-<p>Changes will be published at <a href="https://call.l8.nz/privacy">https://call.l8.nz/privacy</a> with the update date. If a change requires new consent, we will ask for it before applying it.</p>
+<p>If a future version of the app changes how it handles information, we will update this notice before releasing it and change the date above. The current version is always at <a href="https://call.l8.nz/privacy">https://call.l8.nz/privacy</a>. If a change requires new consent, we will ask for it before applying it.</p>
 
-<p class="meta">Privacy contact: <a href="mailto:appstore@catalogomty.com">appstore@catalogomty.com</a></p>
+<p class="meta">Kalloq · Catálogo Industrial Monterrey · Nuevo León, Mexico · <a href="mailto:appstore@catalogomty.com">appstore@catalogomty.com</a></p>
 </section>
 </body>
 </html>
