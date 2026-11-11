@@ -168,7 +168,8 @@ void App::offload(Request r, Work work, Done done) {
 
 void App::on_open(const std::shared_ptr<Session>& s) {
     ++connections_;
-    s->send(dump(event("hello", {{"v", 2}, {"server", std::string("sc-server/") + SC_VERSION}})));
+    // v3: call_ice messages up to 8 KiB (an ICE restart offer with video). See docs/PROTOCOLO.md.
+    s->send(dump(event("hello", {{"v", 3}, {"server", std::string("sc-server/") + SC_VERSION}})));
 }
 
 void App::on_closed(Session& s) {
@@ -614,7 +615,8 @@ void App::send_push(const PushToken& t) {
 namespace {
 // Call payloads are end-to-end encrypted (Noise) and opaque to the server: base64url strings.
 constexpr std::size_t kMaxHandshake = 14 * 1024;
-constexpr std::size_t kMaxIce = 3 * 1024;
+// Also carries a whole new SDP (ICE restart), which with a video section is about 4.7 KiB in base64.
+constexpr std::size_t kMaxIce = 8 * 1024;
 constexpr auto kRingTimeout = std::chrono::seconds(45);
 constexpr auto kReconnectGrace = std::chrono::seconds(10);
 }  // namespace

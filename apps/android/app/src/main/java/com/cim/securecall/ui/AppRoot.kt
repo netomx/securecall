@@ -69,21 +69,31 @@ private val StackSaver = listSaver<List<Screen>, String>(
     },
 )
 
-/** Runs `action` once RECORD_AUDIO is granted, asking for it first if needed. */
+private val MIC = listOf(Manifest.permission.RECORD_AUDIO)
+private val MIC_CAMERA = listOf(Manifest.permission.RECORD_AUDIO, Manifest.permission.CAMERA)
+private val CAMERA = listOf(Manifest.permission.CAMERA)
+
+/** Runs `action` once all `permissions` are granted, asking for the missing ones first. */
 @Composable
-private fun rememberWithMic(onDenied: () -> Unit): ((() -> Unit) -> Unit) {
+private fun rememberWithPermissions(onDenied: (String) -> Unit): ((List<String>, () -> Unit) -> Unit) {
     val context = LocalContext.current
     var pending by remember { mutableStateOf<(() -> Unit)?>(null) }
-    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-        if (granted) pending?.invoke() else onDenied()
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
+        val denied = result.filterValues { !it }.keys
+        when {
+            denied.isEmpty() -> pending?.invoke()
+            Manifest.permission.RECORD_AUDIO in denied -> onDenied("mic")
+            else -> onDenied("camera")
+        }
         pending = null
     }
-    return { action ->
-        if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+    return { permissions, action ->
+        val missing = permissions.filter { ContextCompat.checkSelfPermission(context, it) != PackageManager.PERMISSION_GRANTED }
+        if (missing.isEmpty()) {
             action()
         } else {
             pending = action
-            launcher.launch(Manifest.permission.RECORD_AUDIO)
+            launcher.launch(missing.toTypedArray())
         }
     }
 }
@@ -92,7 +102,10 @@ private fun rememberWithMic(onDenied: () -> Unit): ((() -> Unit) -> Unit) {
 fun AppRoot(vm: AppController) {
     val ui by vm.ui.collectAsState()
     val call by vm.call.collectAsState()
-    val withMic = rememberWithMic { vm.notice(Notice.Error("mic")) }
+    val localVideo by vm.localVideo.collectAsState()
+    val remoteVideo by vm.remoteVideo.collectAsState()
+    val frontCamera by vm.frontCamera.collectAsState()
+    val withPermissions = rememberWithPermissions { vm.notice(Notice.Error(it)) }
     val snackbar = remember { SnackbarHostState() }
     val notice = ui.notice
     val noticeMessage = notice?.let { noticeText(it) }
@@ -112,15 +125,19 @@ fun AppRoot(vm: AppController) {
                 Phase.LoggedOut -> AuthFlow(vm, ui)
                 is Phase.ShowRecovery -> RecoveryCodeScreen(phase.code, onDone = vm::recoverySaved)
                 Phase.LoggedIn -> {
-                    MainFlow(vm, ui, onCall = { id -> withMic { vm.startCall(id) } })
+                    MainFlow(vm, ui, onCall = { id, video -> withPermissions(if (video) MIC_CAMERA else MIC) { vm.startCall(id, video) } })
                     call?.let { c ->
                         CallScreen(
                             call = c,
                             peerName = vm.displayName(c.peerId),
-                            onAccept = { withMic(vm::acceptCall) },
+                            video = CallVideo(vm.videoEgl.eglBaseContext, localVideo, remoteVideo, frontCamera),
+                            onAccept = { withPermissions(MIC) { vm.acceptCall() } },
+                            onAcceptVideo = { withPermissions(MIC_CAMERA) { vm.acceptCall(camera = true) } },
                             onReject = vm::rejectCall,
                             onHangUp = vm::hangUp,
                             onMute = vm::toggleMute,
+                            onCamera = { if (c.cameraOn) vm.toggleCamera() else withPermissions(CAMERA, vm::toggleCamera) },
+                            onSwitchCamera = vm::switchCamera,
                             onSpeaker = vm::toggleSpeaker,
                             onBluetooth = vm::toggleBluetooth,
                             onResume = vm::resumeCall,
@@ -151,7 +168,7 @@ fun AppRoot(vm: AppController) {
 }
 
 @Composable
-private fun MainFlow(vm: AppController, ui: UiState, onCall: (String) -> Unit) {
+private fun MainFlow(vm: AppController, ui: UiState, onCall: (String, Boolean) -> Unit) {
     var stack by rememberSaveable(stateSaver = StackSaver) { mutableStateOf(listOf<Screen>(Screen.Contacts)) }
     val push: (Screen) -> Unit = { stack = stack + it }
     val pop: () -> Unit = { stack = stack.dropLast(1) }
@@ -174,7 +191,8 @@ private fun MainFlow(vm: AppController, ui: UiState, onCall: (String) -> Unit) {
             onAdd = { push(Screen.AddFriend) },
             onSettings = { push(Screen.Settings) },
             onOpen = { push(Screen.Contact(it)) },
-            onCall = onCall,
+            onCall = { onCall(it, false) },
+            onVideoCall = { onCall(it, true) },
             onRespond = vm::respond,
             onCancelRequest = vm::removeFriend,
         )
@@ -188,7 +206,8 @@ private fun MainFlow(vm: AppController, ui: UiState, onCall: (String) -> Unit) {
                 ContactScreen(
                     friend = friend,
                     onBack = pop,
-                    onCall = { onCall(friend.id) },
+                    onCall = { onCall(friend.id, false) },
+                    onVideoCall = { onCall(friend.id, true) },
                     onAlias = { vm.setAlias(friend.id, it) },
                     onTrustKey = { vm.trustKey(friend.id) },
                     onVerify = { push(Screen.Verify(friend.id)) },

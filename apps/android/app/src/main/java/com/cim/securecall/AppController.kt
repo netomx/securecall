@@ -9,8 +9,11 @@ import androidx.annotation.StringRes
 import com.cim.securecall.call.AudioRoute
 import com.cim.securecall.call.AudioRouter
 import com.cim.securecall.call.SystemCall
+import com.cim.securecall.call.VideoQuality
 import android.Manifest
+import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
+import android.util.Log
 import android.telecom.DisconnectCause
 import androidx.core.content.ContextCompat
 import com.cim.securecall.call.CallEngine
@@ -101,6 +104,7 @@ data class UiState(
     val notice: Notice? = null,
     val pendingInvite: String? = null,
     val pushReady: Boolean = false,  // the server can wake this phone for calls
+    val videoQuality: String = "auto", // "auto" (Wi-Fi high, mobile data saver), "high" or "saver"
 )
 
 enum class CallPhase { Calling, Incoming, Connecting, Active, Ended }
@@ -121,13 +125,20 @@ data class CallUi(
     val rttMs: Int? = null,            // round trip of the audio, for the quality indicator
     val onHold: Boolean = false,       // the system put our call on hold (a SIM call was answered)
     val peerOnHold: Boolean = false,   // the other phone did
-)
+    val video: Boolean = false,        // placed as a video call
+    val cameraOn: Boolean = false,     // we want our camera on (paused while the app is in the background)
+    val peerCamera: Boolean = false,   // the other phone is sending its camera
+    val peerProto: Int? = null,        // protocol version of the other app, once its offer or answer is read
+) {
+    /** The other app can do video. Unknown (still ringing on their side) counts as yes. */
+    val peerVideo: Boolean get() = (peerProto ?: PROTOCOL) >= VIDEO_SINCE
+}
 
 class AppController(private val app: Application) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val store = LocalStore(app)
     private val server = ServerClient(SERVER_URL)
-    private val _ui = MutableStateFlow(UiState())
+    private val _ui = MutableStateFlow(UiState(videoQuality = store.videoQuality))
     val ui: StateFlow<UiState> = _ui
 
     private var sessionJob: Job? = null
@@ -161,6 +172,16 @@ class AppController(private val app: Application) {
     private var mediaRestart: Job? = null
     private var statsJob: Job? = null
     private var lastNetwork: Network? = null
+    private var peerMaxBps: Int? = null                  // the other side asked for at most this much video
+    private var sentVideo: Pair<Boolean, Int>? = null    // camera and limit we last told the other side
+
+    private val debuggable = app.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0  // test builds log video stats
+
+    // Video for the call screen
+    val videoEgl get() = engine.egl
+    val localVideo get() = engine.localVideo
+    val remoteVideo get() = engine.remoteVideo
+    val frontCamera get() = engine.frontCamera
 
     init {
         scope.launch {
@@ -197,6 +218,7 @@ class AppController(private val app: Application) {
                     scope.launch {
                         val changed = lastNetwork != null && lastNetwork != network
                         lastNetwork = network
+                        applyVideo()  // "auto" quality follows Wi-Fi / mobile data
                         if (changed && store.token != null && server.state.value != ConnState.Disconnected) {
                             server.disconnect()
                             keepSession()
@@ -615,8 +637,10 @@ class AppController(private val app: Application) {
             _call.update { c -> c?.copy(phase = CallPhase.Active, connectedAt = c.connectedAt ?: SystemClock.elapsedRealtime()) }
             mediaDown = false
             updateReconnecting()
+            applyVideo()
             if (statsJob == null) statsJob = scope.launch {
                 while (true) {
+                    if (debuggable) runCatching { engine.videoOutStats() }.getOrNull()?.let { Log.d("CallVideo", it) }
                     val rtt = runCatching { engine.rttMs() }.getOrNull()
                     _call.update { it?.copy(rttMs = rtt ?: it.rttMs) }
                     delay(2_000)
@@ -722,14 +746,14 @@ class AppController(private val app: Application) {
         iceOut.clear()
     }
 
-    /** Requires RECORD_AUDIO (the UI asks for it first). */
-    fun startCall(friendId: String) {
+    /** Requires RECORD_AUDIO, and CAMERA for [video] (the UI asks for them first). */
+    fun startCall(friendId: String, video: Boolean = false) {
         if (_call.value != null) return
         val e2e = e2eFor(friendId) ?: return notice(Notice.Error("key_changed"))
         val callId = UUID.randomUUID().toString()
-        _call.value = CallUi(callId, friendId, outgoing = true, phase = CallPhase.Calling, verified = e2e.psk != null)
+        _call.value = CallUi(callId, friendId, outgoing = true, phase = CallPhase.Calling, verified = e2e.psk != null, video = video, cameraOn = video)
         CallService.start(app, displayName(friendId))
-        startSystemCall(friendId, incoming = false)
+        startSystemCall(friendId, incoming = false, video = video)
         tones.ringback()
         scope.launch {
             try {
@@ -737,12 +761,15 @@ class AppController(private val app: Application) {
                 if (!awaitAuthenticated()) return@launch finishCall("network")
                 if (_call.value?.let { it.callId == callId && it.phase == CallPhase.Calling } != true) return@launch  // hung up while waiting
                 engine.open(iceServers(), engineListener)
+                applyVideo()  // the camera preview shows while it rings
                 val offer = engine.createOffer()
                 val hs = CallCrypto.handshake(true, e2e.seed, e2e.peerIk, e2e.psk, callId)
                 val payload = buildJsonObject {
                     put("sdp", offer)
                     put("psk", CallCrypto.pskId(e2e.psk))
                     put("ts", System.currentTimeMillis())  // lets the callee refuse a replayed old offer
+                    put("proto", PROTOCOL)
+                    put("video", video)
                 }.toString()
                 handshake = hs
                 server.call("call") {
@@ -791,7 +818,11 @@ class AppController(private val app: Application) {
         }
         pendingOffer = offer.str("sdp") ?: return reject("e2e_failed")
         handshake = hs
-        _call.value = CallUi(callId, from, outgoing = false, phase = CallPhase.Incoming, verified = e2e.psk != null)
+        val video = offer["video"]?.jsonPrimitive?.booleanOrNull == true
+        _call.value = CallUi(
+            callId, from, outgoing = false, phase = CallPhase.Incoming, verified = e2e.psk != null,
+            video = video, peerProto = peerProto(offer),
+        )
         ringSeenAt = SystemClock.elapsedRealtime()
         CallNotifications.answerToken = UUID.randomUUID().toString()
         // Keep the CPU awake while ringing so the "call ended" event is not missed in a sleeping phone,
@@ -807,7 +838,7 @@ class AppController(private val app: Application) {
         }
         tones.ring()
         CallService.ring(app, displayName(from))
-        startSystemCall(from, incoming = true)
+        startSystemCall(from, incoming = true, video = video)
     }
 
     /** Set by MainActivity. The incoming-call notification only pops up when the call screen is not visible. */
@@ -815,27 +846,29 @@ class AppController(private val app: Application) {
         set(value) {
             field = value
             if (value) reconnectNow()
+            applyVideo()  // no camera while the app is not on screen
             val c = _call.value
             if (c?.phase == CallPhase.Incoming) CallNotifications.showIncoming(app, displayName(c.peerId), headsUp = !value)
         }
 
-    /** Requires RECORD_AUDIO (the UI asks for it first). */
-    fun acceptCall() {
+    /** Requires RECORD_AUDIO, and CAMERA with [camera] (the UI asks for them first). */
+    fun acceptCall(camera: Boolean = false) {
         val c = _call.value?.takeIf { it.phase == CallPhase.Incoming } ?: return
         val offer = pendingOffer ?: return
         pendingOffer = null
         ringTimeout?.cancel()
         tones.stop()
         CallNotifications.cancelIncoming(app)
-        _call.value = c.copy(phase = CallPhase.Connecting)
+        _call.value = c.copy(phase = CallPhase.Connecting, cameraOn = camera && c.peerVideo)
         CallService.start(app, displayName(c.peerId))
-        if (systemDeclined) audio.start() else if (!systemAnswering) systemCall.answer()
+        if (systemDeclined) audio.start() else if (!systemAnswering) systemCall.answer(camera)
         scope.launch {
             try {
                 engine.open(iceServers(), engineListener)
                 val answer = engine.acceptOffer(offer)
+                applyVideo()
                 val hs = handshake ?: error("no handshake")
-                val (msg, t) = hs.writeAnswer(buildJsonObject { put("sdp", answer) }.toString().encodeToByteArray())
+                val (msg, t) = hs.writeAnswer(buildJsonObject { put("sdp", answer); put("proto", PROTOCOL) }.toString().encodeToByteArray())
                 transport = t
                 _call.update { if (it?.callId == c.callId) it.copy(code = CallCrypto.callCode(hs.handshakeHash)) else it }
                 server.call("call_answer") {
@@ -844,6 +877,7 @@ class AppController(private val app: Application) {
                 }
                 iceReady = true
                 flushIce()
+                sendVideoState()
             } catch (e: CancellationException) {
                 throw e
             } catch (e: ServerError) {
@@ -877,22 +911,28 @@ class AppController(private val app: Application) {
         // Fails if the answer was not made by the pinned peer or the QR PSKs differ.
         val opened = runCatching {
             val (payload, t) = hs.readAnswer(b64urlDecode(ev.str("msg")!!)!!)
-            Json.parseToJsonElement(payload.decodeToString()).jsonObject.str("sdp")!! to t
-        }.getOrNull()
+            Json.parseToJsonElement(payload.decodeToString()).jsonObject to t
+        }.getOrNull()?.takeIf { it.first.str("sdp") != null }
         if (opened == null) {
             scope.launch { runCatching { server.call("call_end") { put("call_id", c.callId) } } }
             finishCall("e2e_failed")
             return
         }
-        val (sdp, t) = opened
+        val (answer, t) = opened
+        val sdp = answer.str("sdp")!!
+        val proto = peerProto(answer)
         tones.stop()
         systemCall.active()
         transport = t
         iceReady = true
-        _call.value = c.copy(phase = CallPhase.Connecting, code = CallCrypto.callCode(hs.handshakeHash))
+        _call.value = c.copy(
+            phase = CallPhase.Connecting, code = CallCrypto.callCode(hs.handshakeHash),
+            peerProto = proto, cameraOn = c.cameraOn && proto >= VIDEO_SINCE,
+        )
         flushIce()
         scope.launch {
             runCatching { engine.setAnswer(sdp) }.onFailure { engineListener.onFailed() }
+            applyVideo()
         }
     }
 
@@ -914,6 +954,11 @@ class AppController(private val app: Application) {
             "answer" -> if (_call.value?.outgoing == true) scope.launch { runCatching { engine.setAnswer(o.str("sdp")!!) } }
         }
         o["hold"]?.jsonPrimitive?.booleanOrNull?.let { held -> _call.update { it?.copy(peerOnHold = held) } }
+        o["camera"]?.jsonPrimitive?.booleanOrNull?.let { on -> _call.update { it?.copy(peerCamera = on) } }
+        o["video_max"]?.jsonPrimitive?.intOrNull?.let { bps ->
+            peerMaxBps = bps.coerceIn(MIN_VIDEO_BPS, VideoQuality.High.maxBitrateBps)
+            applyVideo()
+        }
         val sdp = o.str("candidate") ?: return
         val index = o["sdpMLineIndex"]?.jsonPrimitive?.intOrNull ?: 0
         engine.addRemoteCandidate(IceCandidate(o.str("sdpMid"), index, sdp))
@@ -925,6 +970,55 @@ class AppController(private val app: Application) {
         _call.value = c.copy(muted = !c.muted)
     }
 
+    /** Turning the camera on requires CAMERA (the UI asks for it first). */
+    fun toggleCamera() {
+        val c = _call.value ?: return
+        if (c.phase == CallPhase.Ended || c.phase == CallPhase.Incoming) return
+        if (!c.peerVideo) return  // the call screen already says why
+        _call.value = c.copy(cameraOn = !c.cameraOn)
+        applyVideo()
+    }
+
+    fun switchCamera() = engine.switchCamera()
+
+    fun setVideoQuality(quality: String) {
+        store.videoQuality = quality
+        _ui.update { it.copy(videoQuality = quality) }
+        applyVideo()
+    }
+
+    private fun videoQuality(): VideoQuality = when (store.videoQuality) {
+        "high" -> VideoQuality.High
+        "saver" -> VideoQuality.Saver
+        else -> if (app.getSystemService(ConnectivityManager::class.java).isActiveNetworkMetered) VideoQuality.Saver else VideoQuality.High
+    }
+
+    /**
+     * Camera, capture size and video bitrate from what the user wants, the network, the limit the other side
+     * asked for and whether the app is on screen. Tells the other side when that changes.
+     */
+    private fun applyVideo() {
+        val c = _call.value ?: return
+        if (c.phase == CallPhase.Incoming || c.phase == CallPhase.Ended) return
+        val quality = videoQuality()
+        engine.setCamera(c.cameraOn && appVisible && c.peerVideo, quality)
+        engine.setMaxBitrate(minOf(quality.maxBitrateBps, peerMaxBps ?: quality.maxBitrateBps))
+        audio.setVideo(c.cameraOn)
+        sendVideoState()
+    }
+
+    /** {camera, video_max} to the other side: whether to show our picture, and how much video we want to receive. */
+    private fun sendVideoState() {
+        val c = _call.value ?: return
+        if (transport == null || !iceReady || !c.peerVideo) return
+        val state = (c.cameraOn && appVisible) to videoQuality().maxBitrateBps
+        if (state == sentVideo) return
+        sentVideo = state
+        scope.launch {
+            runCatching { sendSecure(c.callId, buildJsonObject { put("camera", state.first); put("video_max", state.second) }.toString()) }
+        }
+    }
+
     // ---------------------------------------------------------------- system telephony
 
     private val systemListener = object : SystemCall.Listener {
@@ -933,7 +1027,7 @@ class AppController(private val app: Application) {
                 "no microphone permission"
             }
             systemAnswering = true
-            try { acceptCall() } finally { systemAnswering = false }
+            try { acceptCall() } finally { systemAnswering = false }  // car, watch, headset: camera off
         }
 
         override fun onSystemDisconnect() {
@@ -949,9 +1043,9 @@ class AppController(private val app: Application) {
         }
     }
 
-    private fun startSystemCall(peerId: String, incoming: Boolean) {
+    private fun startSystemCall(peerId: String, incoming: Boolean, video: Boolean) {
         systemDeclined = false
-        systemCall.start(displayName(peerId), peerId, incoming, systemListener)
+        systemCall.start(displayName(peerId), peerId, incoming, video, systemListener)
     }
 
     /** "Resume" on the call screen after a SIM call put ours on hold. */
@@ -1000,6 +1094,8 @@ class AppController(private val app: Application) {
         selfAway = false
         peerAway = false
         mediaDown = false
+        peerMaxBps = null
+        sentVideo = null
         tones.stop()
         engine.close()
         systemCall.end(
@@ -1014,6 +1110,7 @@ class AppController(private val app: Application) {
         )
         endedLocally = false
         audio.stop()
+        audio.reset()
         CallService.stop(app)
         CallNotifications.cancelIncoming(app)
         if (!c.outgoing && c.phase == CallPhase.Incoming && reason in setOf("hangup", "timeout", "disconnected")) {
@@ -1023,7 +1120,7 @@ class AppController(private val app: Application) {
             _call.value = null
             return
         }
-        _call.value = c.copy(phase = CallPhase.Ended, endReason = reason, muted = false, route = AudioRoute.Earpiece)
+        _call.value = c.copy(phase = CallPhase.Ended, endReason = reason, muted = false, route = AudioRoute.Earpiece, cameraOn = false, peerCamera = false)
         scope.launch {
             delay(1_800)
             _call.update { if (it?.callId == c.callId && it.phase == CallPhase.Ended) null else it }
@@ -1033,6 +1130,17 @@ class AppController(private val app: Application) {
 
 private const val RING_LIMIT_MS = 60_000L
 private const val RECONNECT_LIMIT_MS = 10_000L
+/**
+ * Version of the protocol between two apps, sent inside the encrypted offer and answer ("proto"). Apps before
+ * it send nothing and count as 2. Each feature names the version that brought it, so a call with an older app
+ * can say what is missing instead of failing.
+ */
+const val PROTOCOL = 3
+const val VIDEO_SINCE = 3  // video calls, quality limits ({camera, video_max})
+
+private fun peerProto(payload: JsonObject): Int = payload["proto"]?.jsonPrimitive?.intOrNull ?: 2
+
+private const val MIN_VIDEO_BPS = 100_000  // a lower limit from the other side would only freeze the picture
 // How old an incoming offer may be. Generous: phone clocks drift and a sleeping phone is woken by push.
 private const val OFFER_MAX_AGE_MS = 10 * 60_000L
 

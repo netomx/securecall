@@ -191,4 +191,21 @@
     <string name="push_off_hint">You only get calls while Kalloq is open or was used recently.</string>
     <string name="fullscreen_off">Allow the incoming call screen</string>
     <string name="fullscreen_off_hint">Without this permission, a locked phone only shows a notification.</string>
+
+    <!-- Video -->
+    <string name="video_call">Video call</string>
+    <string name="call_incoming_video">Incoming video call</string>
+    <string name="call_answer_video">With video</string>
+    <string name="call_answer_voice">Voice only</string>
+    <string name="call_camera">Camera</string>
+    <string name="call_switch_camera">Switch camera</string>
+    <string name="err_camera">Kalloq needs the camera for video</string>
+    <string name="call_no_video_old_app">Video not available: %1$s is using an older version of Kalloq</string>
+    <string name="video_quality">Video quality</string>
+    <string name="video_quality_auto">Automatic</string>
+    <string name="video_quality_auto_hint">High on Wi-Fi, data saver on mobile data</string>
+    <string name="video_quality_high">High</string>
+    <string name="video_quality_high_hint">Up to 720p, about 1.5 Mbps</string>
+    <string name="video_quality_saver">Data saver</string>
+    <string name="video_quality_saver_hint">Smaller picture, about 256 kbps</string>
 </resources>

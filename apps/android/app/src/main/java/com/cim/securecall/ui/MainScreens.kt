@@ -54,6 +54,7 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.VerifiedUser
+import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -160,6 +161,7 @@ fun ContactsScreen(
     onSettings: () -> Unit,
     onOpen: (String) -> Unit,
     onCall: (String) -> Unit,
+    onVideoCall: (String) -> Unit,
     onRespond: (String, Boolean) -> Unit,
     onCancelRequest: (String) -> Unit,
 ) {
@@ -231,8 +233,13 @@ fun ContactsScreen(
                             }
                         },
                         trailingContent = {
-                            IconButton(onClick = { onCall(f.id) }) {
-                                Icon(Icons.Default.Call, stringResource(R.string.call), tint = MaterialTheme.colorScheme.primary)
+                            Row {
+                                IconButton(onClick = { onVideoCall(f.id) }) {
+                                    Icon(Icons.Default.Videocam, stringResource(R.string.video_call), tint = MaterialTheme.colorScheme.primary)
+                                }
+                                IconButton(onClick = { onCall(f.id) }) {
+                                    Icon(Icons.Default.Call, stringResource(R.string.call), tint = MaterialTheme.colorScheme.primary)
+                                }
                             }
                         },
                     )
@@ -348,6 +355,7 @@ fun ContactScreen(
     friend: Friend,
     onBack: () -> Unit,
     onCall: () -> Unit,
+    onVideoCall: () -> Unit,
     onAlias: (String) -> Unit,
     onTrustKey: () -> Unit,
     onVerify: () -> Unit,
@@ -385,10 +393,17 @@ fun ContactScreen(
             )
             Spacer(Modifier.height(16.dp))
 
-            Button(onClick = onCall, modifier = Modifier.fillMaxWidth().height(52.dp)) {
-                Icon(Icons.Default.Call, null)
-                Spacer(Modifier.size(8.dp))
-                Text(stringResource(R.string.call))
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Button(onClick = onCall, modifier = Modifier.weight(1f).height(52.dp)) {
+                    Icon(Icons.Default.Call, null)
+                    Spacer(Modifier.size(8.dp))
+                    Text(stringResource(R.string.call))
+                }
+                Button(onClick = onVideoCall, modifier = Modifier.weight(1f).height(52.dp)) {
+                    Icon(Icons.Default.Videocam, null)
+                    Spacer(Modifier.size(8.dp))
+                    Text(stringResource(R.string.video_call))
+                }
             }
 
             SectionTitle(stringResource(R.string.user_id), Modifier.padding(top = 16.dp))
@@ -536,6 +551,21 @@ fun SettingsScreen(vm: AppController, ui: UiState, onBack: () -> Unit) {
                 )
             }
 
+            SectionTitle(stringResource(R.string.video_quality))
+            listOf(
+                Triple("auto", R.string.video_quality_auto, R.string.video_quality_auto_hint),
+                Triple("high", R.string.video_quality_high, R.string.video_quality_high_hint),
+                Triple("saver", R.string.video_quality_saver, R.string.video_quality_saver_hint),
+            ).forEach { (value, label, hint) ->
+                ListItem(
+                    modifier = Modifier.selectable(selected = ui.videoQuality == value, role = Role.RadioButton) { vm.setVideoQuality(value) },
+                    leadingContent = { RadioButton(selected = ui.videoQuality == value, onClick = null) },
+                    headlineContent = { Text(stringResource(label)) },
+                    supportingContent = { Text(stringResource(hint), style = MaterialTheme.typography.bodySmall) },
+                )
+            }
+
+            HorizontalDivider()
             SectionTitle(stringResource(R.string.account))
             ListItem(
                 headlineContent = { Text(ui.username ?: "") },

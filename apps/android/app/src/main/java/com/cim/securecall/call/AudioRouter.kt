@@ -37,6 +37,10 @@ class AudioRouter(context: Context) {
     private var system: CallControlScope? = null
     private var systemJobs: List<Job> = emptyList()
     private var endpoints: List<CallEndpointCompat> = emptyList()
+    // Video: the phone is held at arm's length, so the speaker instead of the earpiece and no proximity sensor.
+    private var video = false
+    private var speakerPending = false  // switch to the speaker once the system tells us its endpoints
+    private var currentEarpiece = false  // the system's endpoint is the built-in earpiece (not a wired headset)
 
     private val _route = MutableStateFlow(AudioRoute.Earpiece)
     val route: StateFlow<AudioRoute> = _route
@@ -64,7 +68,38 @@ class AudioRouter(context: Context) {
             .also { am.requestAudioFocus(it) }
         am.registerAudioDeviceCallback(deviceCallback, Handler(Looper.getMainLooper()))
         _bluetooth.value = findBluetooth()
-        setRoute(if (_bluetooth.value) AudioRoute.Bluetooth else AudioRoute.Earpiece)
+        setRoute(if (_bluetooth.value) AudioRoute.Bluetooth else if (video) AudioRoute.Speaker else AudioRoute.Earpiece)
+    }
+
+    /**
+     * The camera was turned on or off. Turning it on moves the audio from the earpiece to the speaker (a
+     * headset or Bluetooth stays); turning it off leaves the route alone.
+     */
+    fun setVideo(on: Boolean) {
+        if (video == on) return
+        video = on
+        if (on) {
+            releaseProximity()
+            if (_route.value == AudioRoute.Earpiece) {
+                speakerPending = true
+                trySpeaker()
+            }
+        } else {
+            speakerPending = false
+            val onEarpiece = if (system != null) currentEarpiece else active && _route.value == AudioRoute.Earpiece
+            if (onEarpiece) acquireProximity()
+        }
+    }
+
+    private fun trySpeaker() {
+        if (!speakerPending) return
+        if (system != null) {
+            if (!currentEarpiece || endpoints.none { it.type == CallEndpointCompat.TYPE_SPEAKER }) return
+        } else if (!active) {
+            return  // start() picks the speaker itself
+        }
+        speakerPending = false
+        setRoute(AudioRoute.Speaker)
     }
 
     fun stop() {
@@ -85,6 +120,12 @@ class AudioRouter(context: Context) {
         _route.value = AudioRoute.Earpiece
     }
 
+    /** End of the call: the next one starts as a voice call. */
+    fun reset() {
+        video = false
+        speakerPending = false
+    }
+
     /** The system has the call: mirror its audio endpoints. */
     fun followSystem(call: CallControlScope) {
         stop()
@@ -94,6 +135,7 @@ class AudioRouter(context: Context) {
                 call.availableEndpoints.collect { list ->
                     endpoints = list
                     _bluetooth.value = list.any { it.type == CallEndpointCompat.TYPE_BLUETOOTH }
+                    trySpeaker()
                 }
             },
             call.launch {
@@ -104,7 +146,9 @@ class AudioRouter(context: Context) {
                         else -> AudioRoute.Earpiece  // earpiece or wired headset
                     }
                     _route.value = route
-                    if (route == AudioRoute.Earpiece && e.type == CallEndpointCompat.TYPE_EARPIECE) acquireProximity() else releaseProximity()
+                    currentEarpiece = e.type == CallEndpointCompat.TYPE_EARPIECE
+                    if (currentEarpiece && !video) acquireProximity() else releaseProximity()
+                    trySpeaker()
                 }
             },
         )
@@ -116,6 +160,7 @@ class AudioRouter(context: Context) {
         systemJobs = emptyList()
         system = null
         endpoints = emptyList()
+        currentEarpiece = false
         releaseProximity()
         _route.value = AudioRoute.Earpiece
         _bluetooth.value = false
@@ -165,8 +210,8 @@ class AudioRouter(context: Context) {
             }
         }
         _route.value = target
-        // Screen off near the face only when the audio comes out of the earpiece.
-        if (target == AudioRoute.Earpiece) acquireProximity() else releaseProximity()
+        // Screen off near the face only when the audio comes out of the earpiece (and nobody is on camera).
+        if (target == AudioRoute.Earpiece && !video) acquireProximity() else releaseProximity()
     }
 
     private fun devicesChanged() {

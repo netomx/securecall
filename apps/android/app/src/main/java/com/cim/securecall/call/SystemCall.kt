@@ -38,7 +38,7 @@ class SystemCall(context: Context, private val scope: CoroutineScope, private va
     private val manager = CallsManager(context)
 
     @SuppressLint("MissingPermission")  // MANAGE_OWN_CALLS is a normal permission, granted at install
-    private val registered = runCatching { manager.registerAppWithTelecom(CallsManager.CAPABILITY_BASELINE) }
+    private val registered = runCatching { manager.registerAppWithTelecom(CallsManager.CAPABILITY_BASELINE or CallsManager.CAPABILITY_SUPPORTS_VIDEO_CALLING) }
         .onFailure { Log.w(TAG, "Telecom not available", it) }
         .isSuccess
 
@@ -48,7 +48,7 @@ class SystemCall(context: Context, private val scope: CoroutineScope, private va
 
     /** Registers a new call with the system. Returns at once; [listener] hears from the system. */
     @SuppressLint("MissingPermission")
-    fun start(peerName: String, peerId: String, incoming: Boolean, listener: Listener) {
+    fun start(peerName: String, peerId: String, incoming: Boolean, video: Boolean, listener: Listener) {
         end(DisconnectCause.LOCAL)
         if (!registered) return listener.onUnavailable()
         val queue = Channel<suspend CallControlScope.() -> Unit>(Channel.UNLIMITED).also { actions = it }
@@ -56,7 +56,7 @@ class SystemCall(context: Context, private val scope: CoroutineScope, private va
             displayName = peerName,
             address = Uri.fromParts("kalloq", peerId, null),
             direction = if (incoming) CallAttributesCompat.DIRECTION_INCOMING else CallAttributesCompat.DIRECTION_OUTGOING,
-            callType = CallAttributesCompat.CALL_TYPE_AUDIO_CALL,
+            callType = if (video) CallAttributesCompat.CALL_TYPE_VIDEO_CALL else CallAttributesCompat.CALL_TYPE_AUDIO_CALL,
             callCapabilities = CallAttributesCompat.SUPPORTS_SET_INACTIVE,
         )
         job = scope.launch {
@@ -84,8 +84,10 @@ class SystemCall(context: Context, private val scope: CoroutineScope, private va
         }
     }
 
-    /** We answered (our screen or notification). */
-    fun answer() = send { answer(CallAttributesCompat.CALL_TYPE_AUDIO_CALL) }
+    /** We answered (our screen or notification), with or without the camera. */
+    fun answer(video: Boolean) = send {
+        answer(if (video) CallAttributesCompat.CALL_TYPE_VIDEO_CALL else CallAttributesCompat.CALL_TYPE_AUDIO_CALL)
+    }
 
     /** The call is up (outgoing: the other side answered). */
     fun active() = send { setActive() }

@@ -48,6 +48,11 @@ class LocalStore(context: Context) {
         get() = prefs.getString(KEY_USERNAME, null)
         set(value) = prefs.edit().putString(KEY_USERNAME, value).apply()
 
+    /** Video quality: "auto" (high on Wi-Fi, saver on mobile data), "high" or "saver". */
+    var videoQuality: String
+        get() = prefs.getString(KEY_VIDEO_QUALITY, null) ?: "auto"
+        set(value) = prefs.edit().putString(KEY_VIDEO_QUALITY, value).apply()
+
     /** Names the user gave to contacts. Never sent to the server. */
     fun aliases(): Map<String, String> = readMap(KEY_ALIASES)
     fun setAlias(id: String, alias: String?) = updateMap(KEY_ALIASES) { if (alias.isNullOrBlank()) remove(id) else put(id, alias.trim()) }
@@ -156,6 +161,7 @@ class LocalStore(context: Context) {
         const val KEY_PINS = "pins"
         const val KEY_VERIFY = "verifications"
         const val KEY_SEEN_CALLS = "seen_calls"
+        const val KEY_VIDEO_QUALITY = "video_quality"
         const val SEEN_CALLS = 200
     }
 }

@@ -44,7 +44,7 @@ class Client:
         self.ws = await websockets.connect(URL)
         self.reader = asyncio.create_task(self._read())
         hello = await self.event("hello")
-        assert hello["v"] == 2
+        assert hello["v"] == 3
         return self
 
     async def _read(self):
@@ -329,6 +329,11 @@ async def test_calls():
     cand = "ice-msg"
     await a.ok("call_ice", call_id=cid, msg=cand)
     assert (await b.event("call_ice"))["msg"] == cand
+    # An ICE restart offer with video is about 4.7 KiB of base64; 8 KiB is the limit
+    restart = "r" * 6000
+    await a.ok("call_ice", call_id=cid, msg=restart)
+    assert (await b.event("call_ice"))["msg"] == restart
+    await a.err("call_ice", "bad_request", call_id=cid, msg="r" * (8 * 1024 + 1))
     await c.err("call", "busy", user_id=b.uid, call_id=new_call_id(), msg="offer")
     await c.err("call_end", "not_found", call_id=cid)  # not a participant
     await a.err("call_answer", "bad_request", call_id=cid, msg="x")  # caller cannot answer

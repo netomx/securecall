@@ -187,4 +187,21 @@
     <string name="push_off_hint">Solo recibes llamadas mientras Kalloq está abierto o se usó hace poco.</string>
     <string name="fullscreen_off">Permitir la pantalla de llamada entrante</string>
     <string name="fullscreen_off_hint">Sin este permiso, con el teléfono bloqueado solo verás una notificación.</string>
+
+    <!-- Video -->
+    <string name="video_call">Videollamada</string>
+    <string name="call_incoming_video">Videollamada entrante</string>
+    <string name="call_answer_video">Con video</string>
+    <string name="call_answer_voice">Solo voz</string>
+    <string name="call_camera">Cámara</string>
+    <string name="call_switch_camera">Cambiar cámara</string>
+    <string name="err_camera">Kalloq necesita la cámara para el video</string>
+    <string name="call_no_video_old_app">Video no disponible: %1$s usa una versión anterior de Kalloq</string>
+    <string name="video_quality">Calidad de video</string>
+    <string name="video_quality_auto">Automática</string>
+    <string name="video_quality_auto_hint">Alta en Wi-Fi, ahorro de datos en datos móviles</string>
+    <string name="video_quality_high">Alta</string>
+    <string name="video_quality_high_hint">Hasta 720p, unos 1.5 Mbps</string>
+    <string name="video_quality_saver">Ahorro de datos</string>
+    <string name="video_quality_saver_hint">Imagen más pequeña, unos 256 kbps</string>
 </resources>

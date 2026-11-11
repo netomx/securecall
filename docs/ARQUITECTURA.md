@@ -10,7 +10,7 @@ Licencia: **AGPL-3.0**. Paquete Android: `com.cim.securecall`. Nombre de la app:
 
 | Tema | Decisión |
 |---|---|
-| Medios | Solo voz, 1 a 1, WebRTC (Opus). Licencia BSD-3, sin restricciones |
+| Medios | Voz y video, 1 a 1, WebRTC (Opus, VP8/H.264). Licencia BSD-3, sin restricciones |
 | Cifrado | DTLS-SRTP (WebRTC) con las huellas DTLS autenticadas E2E por un handshake Noise entre las llaves de identidad |
 | Cuentas | Usuario + contraseña. **Sin correo.** Recuperación con código offline |
 | Amigos | Solo por UUID (QR o enlace), con solicitud y aceptación |
@@ -212,6 +212,7 @@ secure-call/
 | 5 | ✅ Push FCM (recibir llamadas con la app cerrada), notificación de llamada con Contestar/Rechazar, llamadas perdidas, audio no capturable por otras apps |
 | 6 | ✅ Endurecimiento: límites por cuenta e IP (llamadas, cambios de llave/ID, conexiones), cola de envío acotada, login obligatorio en 60 s, fuzzer del protocolo, revisión de seguridad de la app (renombres sin reemplazar llaves, ofertas con fecha y no repetibles, Contestar solo desde la notificación, FLAG_SECURE en toda la app), respaldos diarios, APK release firmado y App Links verificados |
 | 7 | ✅ Integración con la telefonía de Android (Telecom autogestionado vía `androidx.core:core-telecom`: ConnectionService hasta Android 13, API de llamadas en 14+): una llamada SIM pone la nuestra en espera ("Reanudar"), coche/reloj/audífonos contestan y cuelgan, el sistema maneja modo y rutas de audio. Si el sistema no acepta la llamada, la app la maneja sola. AAB firmado con llave de subida RSA para Play |
+| 8 | 🔄 Videollamadas (Android listo, iOS pendiente): video en toda llamada sin renegociar al prender la cámara, cámara pausada fuera de pantalla, calidad alta (1.5 Mbps) o ahorro de datos (200 kbps) según Wi-Fi/datos o ajuste, límite pedido al otro lado. Protocolo v3 con versión por app (`proto`) y aviso en pantalla cuando el otro usa una app anterior; `call_ice` hasta 8 KiB para el ICE restart con video |
 
 ---
 

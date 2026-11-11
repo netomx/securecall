@@ -1,4 +1,4 @@
-# Protocolo de señalización v1
+# Protocolo de señalización v3
 
 WebSocket sobre TLS: `wss://call.l8.nz/ws`. Cada mensaje es un objeto JSON en un frame de texto (máx. 16 KiB).
 
@@ -21,7 +21,22 @@ WebSocket sobre TLS: `wss://call.l8.nz/ws`. Cada mensaje es un objeto JSON en un
 {"ev": "friend_request", "user_id": "…"}
 ```
 
-Al conectar, el servidor envía `{"ev":"hello","v":2,"server":"sc-server/<versión>"}`.
+Al conectar, el servidor envía `{"ev":"hello","v":3,"server":"sc-server/<versión>"}`.
+
+### Versiones
+
+Un solo número para todo el protocolo. El servidor lo anuncia en `hello`; cada app manda el suyo dentro de la
+oferta y la respuesta cifradas (`proto`), así cada lado sabe qué puede hacer el otro **en esa llamada** y lo dice
+en pantalla ("Video no disponible: Carlos usa una versión anterior de Kalloq") en vez de fallar. Una app que no
+manda `proto` cuenta como v2.
+
+| Versión | Qué trajo | Servidor | Entre apps |
+|---|---|---|---|
+| 2 | Push FCM/APNs, `ts` en la oferta, espera (`hold`), ICE restart | `hello.v` = 2 | sin `proto` |
+| 3 | Videollamadas y límite de calidad; `call_ice` hasta 8 KiB | `hello.v` = 3 | `proto: 3` |
+
+Una función nueva sube el número y anota aquí desde qué versión existe (en Android, `VIDEO_SINCE` en
+`AppController.kt`).
 
 ## Codificaciones
 
@@ -75,20 +90,29 @@ Al conectar, el servidor envía `{"ev":"hello","v":2,"server":"sc-server/<versi�
 El servidor solo reenvía `msg`, que es opaco para él (base64url): los mensajes Noise del handshake y los
 candidatos ICE cifrados (ver ARQUITECTURA §4.4). Solo se puede llamar a amigos.
 
-- `call.msg` = Noise mensaje 1, cuyo contenido es `{"sdp": oferta, "psk": id del PSK o "none", "ts": ms Unix}`.
+- `call.msg` = Noise mensaje 1, cuyo contenido es `{"sdp": oferta, "psk": id del PSK o "none", "ts": ms Unix,
+  "proto": 3, "video": true|false}`. `video` dice si quien llama empezó con la cámara (el otro ve "Videollamada
+  entrante" y elige contestar con video o solo voz).
   El que recibe rechaza en silencio (`call_reject`) una oferta con más de 10 min de diferencia en `ts` o un `call_id`
   que ya atendió: el servidor podría repetir una oferta vieja, que descifra bien pero no debe volver a sonar.
-- `call_answer.msg` = Noise mensaje 2, con `{"sdp": respuesta}`.
+- `call_answer.msg` = Noise mensaje 2, con `{"sdp": respuesta, "proto": 3}`.
+- Desde v3 toda llamada lleva una sección de video en el SDP, aunque empiece sin cámara: prender o apagar la
+  cámara no renegocia. El video va cifrado igual que el audio (DTLS-SRTP).
 - `call_ice.msg` = nonce (8 bytes, big-endian) ‖ AES-GCM(`{candidate, sdpMid, sdpMLineIndex}`), o bien
   `{hold: true|false}` cuando el sistema pone la llamada en espera (entró una llamada SIM) o la reanuda, y
   `{restart: "offer"|"answer", sdp}` para rehacer la ruta del audio (ICE restart) tras un corte. Solo quien
-  llamó manda `offer`, así nunca se cruzan dos.
+  llamó manda `offer`, así nunca se cruzan dos. Con video ese SDP mide ~3.4 KB (~4.7 KiB en base64): por eso
+  `call_ice` admite hasta 8 KiB desde v3.
+- v3, también en `call_ice`: `{camera: true|false, video_max: bps}`. `camera` dice si mandamos imagen (si no, el
+  otro muestra la inicial); `video_max` es lo más que queremos recibir (1500000 en calidad alta, 200000 en ahorro
+  de datos) y el otro limita su video a eso o menos. Se mandan al conectar y cada vez que cambian (la cámara se
+  pausa cuando la app no está en pantalla).
 
 | op | Parámetros | Respuesta / errores |
 |---|---|---|
 | `call` | `user_id`, `call_id` (UUIDv4 elegido por quien llama), `msg` (máx. 14 KiB) | `{}` · `offline` (desconectado y sin push), `busy` (el otro está en otra llamada), `in_call` (tú ya estás en una), `not_found` |
 | `call_answer` | `call_id`, `msg` (máx. 14 KiB) | `{}` (solo quien recibe la llamada) |
-| `call_ice` | `call_id`, `msg` (máx. 3 KiB) | `{}` |
+| `call_ice` | `call_id`, `msg` (máx. 8 KiB; 3 KiB antes de v3) | `{}` |
 | `call_reject` | `call_id` | `{}` (solo mientras suena) |
 | `call_end` | `call_id` | `{}` (colgar o cancelar) |
 
