@@ -17,7 +17,7 @@ Documento para empezar la app de iOS en una Mac con Claude Code. Lee también `A
 - En la interfaz se dice **"contacto"**, nunca "amigo".
 - Sin correo electrónico: la recuperación es solo con el código offline.
 - Un dispositivo por cuenta (entrar en otro teléfono cierra la sesión anterior).
-- Solo voz, 1 a 1. Licencia AGPL-3.0.
+- Voz y video, 1 a 1 (video desde el protocolo v3: ver `IOS_V3.md`). Licencia AGPL-3.0.
 - Estructura `apps/<nombre>`: la app va en **`apps/ios`**.
 - Identificador propuesto: `com.cim.securecall` (igual que Android), nombre visible "Kalloq".
 - Nunca pegar secretos en el chat (llaves, `.p8`, contraseñas): se copian directo al servidor o a archivos locales ignorados por git.
