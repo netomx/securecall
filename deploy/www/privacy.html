@@ -24,19 +24,19 @@
 
 <section id="es" lang="es">
 <h1>Aviso de privacidad de Kalloq</h1>
-<p class="meta">Última actualización: 5 de noviembre de 2026</p>
+<p class="meta">Última actualización: 11 de noviembre de 2026</p>
 
 <div class="summary">
 <p><strong>En resumen:</strong></p>
 <ul>
-  <li>Kalloq hace llamadas de voz cifradas de extremo a extremo: nadie más, ni nosotros, puede escucharlas.</li>
+  <li>Kalloq hace llamadas de voz y videollamadas cifradas de extremo a extremo: nadie más, ni nosotros, puede escucharlas ni verlas.</li>
   <li>Solo pide un nombre de usuario y una contraseña. No pide correo, número de teléfono ni nombre real.</li>
-  <li>No guardamos el audio ni un historial de llamadas. No hay publicidad, analítica ni rastreadores.</li>
+  <li>No grabamos ni guardamos el audio, el video ni un historial de llamadas. No hay publicidad, analítica ni rastreadores.</li>
   <li>Puede borrar su cuenta en cualquier momento desde la aplicación.</li>
 </ul>
 </div>
 
-<p>Este aviso explica qué datos personales tratamos cuando usa Kalloq, una aplicación de llamadas de voz cifradas de extremo a extremo entre dos personas, para qué los utilizamos y cómo puede ejercer sus derechos, conforme a la Ley Federal de Protección de Datos Personales en Posesión de los Particulares. Kalloq está diseñada para tratar el mínimo de datos y no tenemos forma técnica de escuchar sus llamadas.</p>
+<p>Este aviso explica qué datos personales tratamos cuando usa Kalloq, una aplicación de llamadas de voz y videollamadas cifradas de extremo a extremo entre dos personas, para qué los utilizamos y cómo puede ejercer sus derechos, conforme a la Ley Federal de Protección de Datos Personales en Posesión de los Particulares. Kalloq está diseñada para tratar el mínimo de datos y no tenemos forma técnica de escuchar ni ver sus llamadas.</p>
 
 <h2>Quién es responsable de sus datos</h2>
 <p>Mario Ernesto Villarreal Pérez, conocido comercialmente como Catálogo Industrial Monterrey, es el responsable de la aplicación Kalloq para Android y iPhone (identificador <code>com.cim.securecall</code>) y del tratamiento de sus datos personales, con domicilio en calle Santa Bárbara 1983, colonia Jardines de La Silla, Ciudad Juárez, municipio de Juárez, C.P. 67286, Nuevo León, México.</p>
@@ -51,7 +51,7 @@
   <li><strong>Sesión:</strong> un hash del token de inicio de sesión y el token de push del dispositivo: de Firebase Cloud Messaging en Android (si autoriza las notificaciones) o del servicio de notificaciones de Apple (APNs) en iPhone.</li>
   <li><strong>Datos técnicos de conexión:</strong> la dirección IP con la que se conecta, necesaria para establecer la comunicación.</li>
 </ul>
-<p>No tratamos datos personales sensibles. No recabamos el audio de las llamadas, historial de llamadas, correo, número de teléfono, agenda del teléfono, ubicación, fotografías ni identificadores de publicidad. La aplicación no incluye analítica, rastreadores ni publicidad.</p>
+<p>No tratamos datos personales sensibles. No recabamos el audio ni el video de las llamadas, historial de llamadas, correo, número de teléfono, agenda del teléfono, ubicación, fotografías ni identificadores de publicidad. La aplicación no incluye analítica, rastreadores ni publicidad.</p>
 
 <h2>Para qué utilizamos los datos</h2>
 <p>Finalidades primarias, necesarias para prestar el servicio:</p>
@@ -72,18 +72,18 @@
 <table>
   <tr><th>Permiso</th><th>Para qué se usa</th></tr>
   <tr><td>Micrófono (<code>RECORD_AUDIO</code>)</td><td>Transmitir su voz, solo durante una llamada.</td></tr>
-  <tr><td>Cámara (<code>CAMERA</code>)</td><td>Leer el código QR de un contacto para agregarlo o verificarlo. Las imágenes no se guardan ni se envían.</td></tr>
+  <tr><td>Cámara (<code>CAMERA</code>)</td><td>Transmitir su imagen en una videollamada, solo mientras usted tiene la cámara encendida y la aplicación está en pantalla; y leer el código QR de un contacto para agregarlo o verificarlo. El video va cifrado de extremo a extremo directamente al otro teléfono; ninguna imagen se guarda ni la recibimos.</td></tr>
   <tr><td>Notificaciones y pantalla completa (<code>POST_NOTIFICATIONS</code>, <code>USE_FULL_SCREEN_INTENT</code>)</td><td>Avisarle de una llamada entrante, incluso con la pantalla bloqueada, y mostrar la llamada en curso.</td></tr>
   <tr><td>Servicio en primer plano (<code>FOREGROUND_SERVICE</code>, <code>…_MICROPHONE</code>, <code>…_PHONE_CALL</code>)</td><td>Mantener la llamada activa si sale de la aplicación o apaga la pantalla. Termina al colgar.</td></tr>
   <tr><td>Llamadas del sistema (<code>MANAGE_OWN_CALLS</code>)</td><td>Que Android trate a Kalloq como una llamada: ponerla en espera si entra una llamada telefónica y contestar desde el auto, un reloj o los audífonos.</td></tr>
   <tr><td>Bluetooth (<code>BLUETOOTH</code>, <code>BLUETOOTH_CONNECT</code>)</td><td>Usar audífonos o el auto durante la llamada.</td></tr>
   <tr><td>Red y audio (<code>INTERNET</code>, <code>ACCESS_NETWORK_STATE</code>, <code>CHANGE_NETWORK_STATE</code>, <code>MODIFY_AUDIO_SETTINGS</code>, <code>WAKE_LOCK</code>, <code>VIBRATE</code>)</td><td>Conectarse al servidor, mantener la llamada al cambiar entre Wi-Fi y datos, elegir auricular o altavoz, y sonar o vibrar al recibir una llamada.</td></tr>
 </table>
-<p>En iPhone, la aplicación pide acceso al micrófono (para las llamadas) y a la cámara (solo para leer códigos QR), y usa CallKit para mostrar las llamadas como llamadas del sistema. Puede retirar cualquier permiso desde los ajustes del teléfono; sin el micrófono no es posible hacer llamadas.</p>
+<p>En iPhone, la aplicación pide acceso al micrófono (para las llamadas) y a la cámara (para las videollamadas y para leer códigos QR), y usa CallKit para mostrar las llamadas como llamadas del sistema. Puede retirar cualquier permiso desde los ajustes del teléfono; sin el micrófono no es posible hacer llamadas, y sin la cámara las llamadas son solo de voz.</p>
 
 <h2>Herramientas y servicios de terceros</h2>
 <ul>
-  <li>La aplicación usa bibliotecas de código abierto que funcionan dentro del teléfono y no envían información a nadie: WebRTC (audio de las llamadas), ZXing (códigos QR), Tink (cifrado de los datos locales en Android), OkHttp y las bibliotecas de Android Jetpack.</li>
+  <li>La aplicación usa bibliotecas de código abierto que funcionan dentro del teléfono y no envían información a nadie: WebRTC (audio y video de las llamadas), ZXing (códigos QR), Tink (cifrado de los datos locales en Android), OkHttp y las bibliotecas de Android Jetpack.</li>
   <li><strong>Google y Apple.</strong> Para despertar su teléfono cuando alguien le llama usamos Firebase Cloud Messaging de Google en Android y el servicio de notificaciones de Apple (APNs) en iPhone. El aviso solo indica que hay una llamada; no incluye quién llama ni ningún otro dato. Google trata el token del dispositivo conforme a su <a href="https://policies.google.com/privacy?hl=es-419">política de privacidad</a>; Apple trata el token de su iPhone conforme a la <a href="https://www.apple.com/mx/legal/privacy/">suya</a>.</li>
   <li>La descarga e instalación se hacen a través de Google Play o del App Store. La información que Google o Apple recaben con ese motivo se rige por sus propias políticas de privacidad.</li>
   <li><strong>Infraestructura.</strong> Los proveedores que alojan nuestros servidores pueden procesar datos para prestar el servicio; esa infraestructura puede encontrarse fuera de México.</li>
@@ -91,7 +91,7 @@
 <p>No vendemos datos. Si alguna transferencia requiriera su consentimiento, se lo solicitaremos antes; las comunicaciones exigidas por la ley se atenderán dentro de su alcance.</p>
 
 <h2>Cómo protegemos la información</h2>
-<p>Las conexiones con el servidor usan TLS 1.3. El audio va cifrado de extremo a extremo (DTLS-SRTP, con un intercambio de llaves Noise autenticado por las llaves de identidad de ambos participantes). Cuando no hay conexión directa entre los teléfonos, la llamada pasa por nuestro servidor de retransmisión (TURN), que solo ve datos cifrados que no puede descifrar. El servidor conoce una llamada únicamente mientras está en curso y no guarda con quién habló ni cuánto duró. El código es abierto (AGPL-3.0) y puede revisarse en <a href="https://github.com/netomx/securecall">GitHub</a>. Ningún sistema elimina por completo el riesgo de acceso indebido.</p>
+<p>Las conexiones con el servidor usan TLS 1.3. El audio y el video van cifrados de extremo a extremo (DTLS-SRTP, con un intercambio de llaves Noise autenticado por las llaves de identidad de ambos participantes). Cuando no hay conexión directa entre los teléfonos, la llamada pasa por nuestro servidor de retransmisión (TURN), que solo ve datos cifrados que no puede descifrar. El servidor conoce una llamada únicamente mientras está en curso y no guarda con quién habló ni cuánto duró. El código es abierto (AGPL-3.0) y puede revisarse en <a href="https://github.com/netomx/securecall">GitHub</a>. Ningún sistema elimina por completo el riesgo de acceso indebido.</p>
 
 <h2>Durante cuánto tiempo conservamos los datos</h2>
 <p>Los datos de su cuenta se conservan mientras la cuenta exista. Al eliminarla se borran de inmediato del servidor; las copias de respaldo se conservan 14 días y después se eliminan. El servidor web no guarda registros de acceso; los límites de uso por dirección IP se aplican solo en memoria. El servidor de retransmisión de audio puede anotar la dirección IP de una conexión en registros técnicos que se rotan y eliminan periódicamente y no se asocian a su cuenta. Lo anterior, salvo conservación o bloqueo exigidos por una obligación legal.</p>
@@ -120,19 +120,19 @@
 
 <section id="en" lang="en">
 <h1>Kalloq Privacy Notice</h1>
-<p class="meta">Last updated: November 5, 2026</p>
+<p class="meta">Last updated: November 11, 2026</p>
 
 <div class="summary">
 <p><strong>In short:</strong></p>
 <ul>
-  <li>Kalloq makes end-to-end encrypted voice calls: nobody else, including us, can listen to them.</li>
+  <li>Kalloq makes end-to-end encrypted voice and video calls: nobody else, including us, can hear or see them.</li>
   <li>It only asks for a username and a password. No email, phone number or real name.</li>
-  <li>We keep no call audio or call history. There are no ads, analytics or trackers.</li>
+  <li>We never record or keep call audio, video or call history. There are no ads, analytics or trackers.</li>
   <li>You can delete your account at any time from the app.</li>
 </ul>
 </div>
 
-<p>This notice explains what personal data we process when you use Kalloq, an app for end-to-end encrypted voice calls between two people, why we use it and how you can exercise your rights under Mexico's Federal Law on the Protection of Personal Data Held by Private Parties. Kalloq is designed to process as little data as possible, and we have no technical way to listen to your calls. The Spanish version above prevails under Mexican law.</p>
+<p>This notice explains what personal data we process when you use Kalloq, an app for end-to-end encrypted voice and video calls between two people, why we use it and how you can exercise your rights under Mexico's Federal Law on the Protection of Personal Data Held by Private Parties. Kalloq is designed to process as little data as possible, and we have no technical way to hear or see your calls. The Spanish version above prevails under Mexican law.</p>
 
 <h2>Who is responsible for your data</h2>
 <p>Mario Ernesto Villarreal Pérez, doing business as Catálogo Industrial Monterrey, is responsible for the Kalloq app for Android and iPhone (identifier <code>com.cim.securecall</code>) and for processing your personal data. Address: calle Santa Bárbara 1983, colonia Jardines de La Silla, Ciudad Juárez, municipality of Juárez, 67286, Nuevo León, Mexico.</p>
@@ -147,7 +147,7 @@
   <li><strong>Session:</strong> a hash of the sign-in token and the device's push token: from Firebase Cloud Messaging on Android (if you allow notifications) or from the Apple Push Notification service (APNs) on iPhone.</li>
   <li><strong>Technical connection data:</strong> the IP address you connect from, needed to establish communication.</li>
 </ul>
-<p>We do not process sensitive personal data. We do not collect call audio, call history, email, phone number, your address book, location, photos or advertising identifiers. The app contains no analytics, trackers or ads.</p>
+<p>We do not process sensitive personal data. We do not collect call audio or video, call history, email, phone number, your address book, location, photos or advertising identifiers. The app contains no analytics, trackers or ads.</p>
 
 <h2>Why we use it</h2>
 <p>Only to provide the service: create and authenticate your account and let you recover it; connect you with your contacts and deliver the public keys that make encryption possible; set up calls and alert you to incoming ones; prevent abuse (usage limits per account and IP address) and keep the service secure; and handle your requests and legal obligations. We have no secondary purposes: no marketing, advertising or profile selling.</p>
@@ -160,18 +160,18 @@
 <table>
   <tr><th>Permission</th><th>What it is used for</th></tr>
   <tr><td>Microphone (<code>RECORD_AUDIO</code>)</td><td>Sending your voice, only during a call.</td></tr>
-  <tr><td>Camera (<code>CAMERA</code>)</td><td>Reading a contact's QR code to add or verify them. Images are neither stored nor sent.</td></tr>
+  <tr><td>Camera (<code>CAMERA</code>)</td><td>Sending your picture in a video call, only while your camera is on and the app is on screen; and reading a contact's QR code to add or verify them. Video is end-to-end encrypted straight to the other phone; no image is stored and we never receive any.</td></tr>
   <tr><td>Notifications and full screen (<code>POST_NOTIFICATIONS</code>, <code>USE_FULL_SCREEN_INTENT</code>)</td><td>Alerting you to an incoming call, including on the lock screen, and showing the ongoing call.</td></tr>
   <tr><td>Foreground service (<code>FOREGROUND_SERVICE</code>, <code>…_MICROPHONE</code>, <code>…_PHONE_CALL</code>)</td><td>Keeping the call alive when you leave the app or turn off the screen. It stops when you hang up.</td></tr>
   <tr><td>System calls (<code>MANAGE_OWN_CALLS</code>)</td><td>Letting Android treat Kalloq as a call: holding it when a phone call comes in and answering from the car, a watch or headphones.</td></tr>
   <tr><td>Bluetooth (<code>BLUETOOTH</code>, <code>BLUETOOTH_CONNECT</code>)</td><td>Using headphones or the car during the call.</td></tr>
   <tr><td>Network and audio (<code>INTERNET</code>, <code>ACCESS_NETWORK_STATE</code>, <code>CHANGE_NETWORK_STATE</code>, <code>MODIFY_AUDIO_SETTINGS</code>, <code>WAKE_LOCK</code>, <code>VIBRATE</code>)</td><td>Connecting to the server, keeping the call when switching between Wi-Fi and mobile data, choosing earpiece or speaker, and ringing or vibrating on an incoming call.</td></tr>
 </table>
-<p>On iPhone, the app asks for the microphone (for calls) and the camera (only to read QR codes), and uses CallKit to show calls as system calls. You can withdraw any permission in the phone's settings; without the microphone, calls are not possible.</p>
+<p>On iPhone, the app asks for the microphone (for calls) and the camera (for video calls and to read QR codes), and uses CallKit to show calls as system calls. You can withdraw any permission in the phone's settings; without the microphone, calls are not possible, and without the camera, calls are voice only.</p>
 
 <h2>Third-party tools and services</h2>
 <ul>
-  <li>The app uses open-source libraries that run inside the phone and send information to no one: WebRTC (call audio), ZXing (QR codes), Tink (encryption of local data on Android), OkHttp and the Android Jetpack libraries.</li>
+  <li>The app uses open-source libraries that run inside the phone and send information to no one: WebRTC (call audio and video), ZXing (QR codes), Tink (encryption of local data on Android), OkHttp and the Android Jetpack libraries.</li>
   <li><strong>Google and Apple.</strong> We use Google's Firebase Cloud Messaging on Android and the Apple Push Notification service (APNs) on iPhone to wake your phone when someone calls. The notice only says there is a call; it does not include who is calling or any other data. Google handles the device token under its <a href="https://policies.google.com/privacy">privacy policy</a>; Apple handles your iPhone's token under <a href="https://www.apple.com/legal/privacy/">its own</a>.</li>
   <li>The app is downloaded and installed through Google Play or the App Store. Any information Google or Apple collect for that purpose is governed by their own privacy policies.</li>
   <li><strong>Infrastructure.</strong> Providers hosting our servers may process data to provide the service; that infrastructure may be located outside Mexico.</li>
@@ -179,7 +179,7 @@
 <p>We do not sell data. If a transfer required your consent we would ask first; disclosures required by law will be handled within their scope.</p>
 
 <h2>How we protect it</h2>
-<p>Connections to the server use TLS 1.3. Audio is end-to-end encrypted (DTLS-SRTP, with a Noise key exchange authenticated by both participants' identity keys). When phones cannot connect directly, the call goes through our relay (TURN) server, which only sees encrypted data it cannot decrypt. The server only knows about a call while it is in progress and does not keep who you talked to or for how long. The code is open source (AGPL-3.0) on <a href="https://github.com/netomx/securecall">GitHub</a>. No system fully removes the risk of unauthorized access.</p>
+<p>Connections to the server use TLS 1.3. Audio and video are end-to-end encrypted (DTLS-SRTP, with a Noise key exchange authenticated by both participants' identity keys). When phones cannot connect directly, the call goes through our relay (TURN) server, which only sees encrypted data it cannot decrypt. The server only knows about a call while it is in progress and does not keep who you talked to or for how long. The code is open source (AGPL-3.0) on <a href="https://github.com/netomx/securecall">GitHub</a>. No system fully removes the risk of unauthorized access.</p>
 
 <h2>How long we keep it</h2>
 <p>Account data is kept while the account exists. Deleting the account removes it from the server immediately; backups are kept for 14 days and then deleted. The web server keeps no access logs; per-IP usage limits are applied in memory only. The audio relay server may record a connection's IP address in technical logs that are rotated and deleted periodically and are not linked to your account. All of this is subject to retention required by law.</p>
